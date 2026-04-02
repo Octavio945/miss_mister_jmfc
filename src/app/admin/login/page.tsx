@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, Loader2, Eye, EyeOff } from "lucide-react";
+import { ShieldCheck, Loader2, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function AdminLogin() {
   const [password, setPassword] = useState("");
@@ -41,6 +42,17 @@ export default function AdminLogin() {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 relative overflow-hidden">
       <div className="absolute inset-0 bg-primary/5 pointer-events-none"></div>
+
+      {/* Bouton retour accueil */}
+      <div className="absolute top-6 left-6 z-20">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-sm text-foreground/60 hover:text-accent transition-colors font-medium group"
+        >
+          <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+          <span>Retour à l&apos;accueil</span>
+        </Link>
+      </div>
 
       <div className="w-full max-w-md space-y-8 bg-white dark:bg-[#111] p-10 rounded-3xl shadow-xl border border-black/5 dark:border-white/10 relative z-10">
         

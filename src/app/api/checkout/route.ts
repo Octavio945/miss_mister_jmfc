@@ -2,14 +2,11 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 
-const VOTE_PRICE_XOF = 100; // 100 FCFA par vote
-
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { participantId, voteCount, voterName, voterPhone, voterEmail, isAnonymous } = body;
 
-    // ── Validation ──────────────────────────────────────────────────────────
     if (!participantId || !voteCount || typeof voteCount !== "number" || voteCount < 1) {
       return NextResponse.json(
         { error: "participantId et voteCount (≥ 1) sont requis." },
@@ -17,17 +14,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // ── Récupérer le participant et l'événement ──────────────────────────────
     const participant = await prisma.participant.findUnique({
       where: { id: participantId },
       include: { event: true },
     });
 
     if (!participant) {
-      return NextResponse.json(
-        { error: "Participant introuvable." },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Participant introuvable." }, { status: 404 });
     }
 
     if (!participant.event.isActive) {
@@ -37,16 +30,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // ── Créer ou retrouver le votant ─────────────────────────────────────────
     let voter;
-
     if (isAnonymous) {
       const anonCode = `VOTER-${nanoid(6).toUpperCase()}`;
-      voter = await prisma.voter.create({
-        data: { isAnonymous: true, anonCode },
-      });
+      voter = await prisma.voter.create({ data: { isAnonymous: true, anonCode } });
     } else {
-      // Cherche un votant existant par téléphone, sinon crée-le
       if (voterPhone) {
         voter = await prisma.voter.findFirst({ where: { phone: voterPhone } });
       }
@@ -62,8 +50,9 @@ export async function POST(request: Request) {
       }
     }
 
-    // ── Calculer le montant ──────────────────────────────────────────────────
-    const amount = voteCount * VOTE_PRICE_XOF;
+    // Utiliser le prix dynamique de l'événement (configurable par l'admin)
+    const votePrice = participant.event.votePrice ?? 100;
+    const amount = voteCount * votePrice;
     const reference = `TX-${nanoid(12).toUpperCase()}`;
 
     // ── Créer la transaction PENDING ─────────────────────────────────────────

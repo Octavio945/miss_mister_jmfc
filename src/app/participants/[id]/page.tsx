@@ -1,9 +1,10 @@
 import { TransitionLink as Link } from "@/components/TransitionLink";
 import Image from "next/image";
-import { ArrowLeft, ArrowRight, CheckCircle2, Trophy, Share2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Trophy } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import VotePanel from "@/components/VotePanel";
+import ShareButton from "@/components/ShareButton";
 
 export const dynamic = "force-dynamic";
 
@@ -66,20 +67,21 @@ export default async function ParticipantDetail({
             </div>
 
             <div className="flex justify-center space-x-4">
-              <button
-                id="share-profile-btn"
-                className="flex items-center space-x-2 px-6 py-3 rounded-full bg-white dark:bg-black border border-black/5 dark:border-white/10 hover:shadow-md transition-all"
-              >
-                <Share2 size={18} className="text-foreground/70" />
-                <span className="font-medium">Partager le profil</span>
-              </button>
+              <ShareButton
+                participantName={participant.name}
+                participantId={participant.id}
+              />
             </div>
           </div>
 
           {/* Vote Panel (client component) */}
           <VotePanel 
             participant={participant} 
-            eventActive={participant.event.isActive} 
+            eventActive={
+              participant.event.isActive && 
+              new Date() >= new Date(participant.event.startDate) && 
+              new Date() <= new Date(participant.event.endDate)
+            } 
             votePrice={participant.event.votePrice ?? 100}
           />
 

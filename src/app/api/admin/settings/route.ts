@@ -19,15 +19,20 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { id, isActive, votePrice } = body;
+    const { id, isActive, votePrice, startDate, endDate } = body;
 
-    if (!id || typeof isActive !== "boolean" || typeof votePrice !== "number") {
+    if (!id || typeof isActive !== "boolean" || typeof votePrice !== "number" || !startDate || !endDate) {
       return NextResponse.json({ error: "Données invalides." }, { status: 400 });
     }
 
     const updatedEvent = await prisma.votingEvent.update({
       where: { id },
-      data: { isActive, votePrice },
+      data: { 
+        isActive, 
+        votePrice,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate)
+      },
     });
 
     return NextResponse.json({ success: true, event: updatedEvent });

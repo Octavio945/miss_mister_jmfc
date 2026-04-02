@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { Trophy, CreditCard, Users, TrendingUp } from "lucide-react";
+import { Trophy, CreditCard, Users, TrendingUp, BarChart3 } from "lucide-react";
+import VotesBarChart from "@/components/admin/VotesBarChart";
 
 export const dynamic = "force-dynamic";
 
@@ -152,6 +153,18 @@ export default async function AdminDashboard() {
       <div className="flex flex-col lg:flex-row gap-6">
         {renderLeaderboard("Classement MISS", missCandidates)}
         {renderLeaderboard("Classement MISTER", misterCandidates)}
+      </div>
+
+      {/* Graphs */}
+      <div className="space-y-6 pt-4">
+        <div className="flex items-center space-x-3 text-primary dark:text-white">
+          <BarChart3 size={24} className="text-accent" />
+          <h2 className="text-2xl font-serif font-bold">Analyse Graphique des Votes</h2>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <VotesBarChart data={missCandidates} title="Top Miss (Votes)" color="#d4af37" />
+          <VotesBarChart data={misterCandidates} title="Top Mister (Votes)" color="#d4af37" />
+        </div>
       </div>
 
     </div>

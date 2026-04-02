@@ -1,14 +1,15 @@
 import { TransitionLink as Link } from "@/components/TransitionLink";
-import { ArrowRight, Trophy, Sparkles, Clock, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Trophy, Sparkles, CheckCircle2 } from "lucide-react";
 import { FadeIn, StaggerContainer, StaggerItem, TiltCard, MagneticButton, TextReveal, ParallaxHeroImage } from "@/components/AnimatedSection";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
+import CountdownTimer from "@/components/CountdownTimer";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const event = await prisma.votingEvent.findFirst({
-    where: { isActive: true },
+    orderBy: { createdAt: "desc" },
   });
 
   const participants = event
@@ -80,19 +81,19 @@ export default async function Home() {
           <div className="max-w-4xl mx-auto px-6">
             <FadeIn delay={0.3} direction="up">
               <div className="bg-white dark:bg-[#111] border-2 border-accent/20 rounded-3xl p-8 md:p-12 shadow-2xl flex flex-col items-center text-center hover:border-accent/50 shadow-accent/10 transition-colors duration-700">
-                <Clock className="text-accent mb-4 animate-[bounce_3s_infinite]" size={36} />
-                <h2 className="text-2xl font-serif font-bold text-primary dark:text-white mb-8">Clôture des votes dans :</h2>
-                
-                <StaggerContainer className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 w-full max-w-2xl" delayOrder={0.2}>
-                  {[{label: 'Jours', val: 14}, {label: 'Heures', val: '08'}, {label: 'Minutes', val: 45}, {label: 'Secondes', val: 22, accent: true}].map((time, idx) => (
-                    <StaggerItem key={idx}>
-                      <div className={`flex flex-col items-center justify-center p-4 rounded-2xl border ${time.accent ? 'bg-accent/10 border-accent/20 text-accent ring-[1px] ring-accent/30' : 'bg-primary/5 dark:bg-white/5 border-black/5 dark:border-white/10 text-primary dark:text-white'} transition-transform hover:scale-110 duration-500 shadow-lg`}>
-                        <span className="text-4xl md:text-5xl font-bold font-serif mb-1 drop-shadow-md">{time.val}</span>
-                        <span className={`text-xs uppercase tracking-[0.2em] ${time.accent ? 'font-bold' : 'font-medium text-foreground/50'}`}>{time.label}</span>
-                      </div>
-                    </StaggerItem>
-                  ))}
-                </StaggerContainer>
+                <h2 className="text-2xl font-serif font-bold text-primary dark:text-white mb-8">
+                  {event ? "Clôture des votes dans :" : "Aucun événement actif"}
+                </h2>
+                {event ? (
+                  <CountdownTimer endDate={event.endDate} startDate={event.startDate} isActive={event.isActive} />
+                ) : (
+                  <p className="text-foreground/60">Les votes ne sont pas encore ouverts.</p>
+                )}
+                {event && (
+                  <p className="mt-6 text-xs text-foreground/40">
+                    Votes du {new Date(event.startDate).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })} au {new Date(event.endDate).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+                  </p>
+                )}
               </div>
             </FadeIn>
           </div>

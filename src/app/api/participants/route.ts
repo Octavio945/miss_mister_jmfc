@@ -4,12 +4,12 @@ import { NextResponse } from "next/server";
 export async function GET() {
   try {
     const event = await prisma.votingEvent.findFirst({
-      where: { isActive: true },
+      orderBy: { createdAt: "desc" },
     });
 
     if (!event) {
       return NextResponse.json(
-        { error: "Aucun événement actif trouvé." },
+        { error: "Aucun événement trouvé." },
         { status: 404 }
       );
     }

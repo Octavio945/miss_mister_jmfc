@@ -41,6 +41,8 @@ export default function AdminSettings() {
           id: eventData.id,
           isActive: eventData.isActive,
           votePrice: Number(eventData.votePrice),
+          startDate: eventData.startDate,
+          endDate: eventData.endDate,
         }),
       });
 
@@ -52,6 +54,14 @@ export default function AdminSettings() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const formatDateForInput = (isoDate: string) => {
+    if (!isoDate) return "";
+    const date = new Date(isoDate);
+    const tzOffset = date.getTimezoneOffset() * 60000; // offset in milliseconds
+    const localISOTime = (new Date(date.getTime() - tzOffset)).toISOString().slice(0, 16);
+    return localISOTime;
   };
 
   const handleResetDB = async () => {
@@ -129,6 +139,36 @@ export default function AdminSettings() {
                 />
                 <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-primary"></div>
               </label>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-4 bg-black/5 dark:bg-white/5 rounded-2xl">
+                <h3 className="font-bold mb-2">Date de début</h3>
+                <p className="text-sm text-foreground/60 mb-4">
+                  Quand débutent les votes.
+                </p>
+                <input
+                  type="datetime-local"
+                  value={formatDateForInput(eventData.startDate)}
+                  onChange={(e) => setEventData({ ...eventData, startDate: e.target.value })}
+                  className="w-full bg-white dark:bg-black/50 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/50"
+                  required
+                />
+              </div>
+
+              <div className="p-4 bg-black/5 dark:bg-white/5 rounded-2xl">
+                <h3 className="font-bold mb-2">Date de fin</h3>
+                <p className="text-sm text-foreground/60 mb-4">
+                  Quand se terminent les votes.
+                </p>
+                <input
+                  type="datetime-local"
+                  value={formatDateForInput(eventData.endDate)}
+                  onChange={(e) => setEventData({ ...eventData, endDate: e.target.value })}
+                  className="w-full bg-white dark:bg-black/50 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/50"
+                  required
+                />
+              </div>
             </div>
 
             <div className="p-4 bg-black/5 dark:bg-white/5 rounded-2xl">

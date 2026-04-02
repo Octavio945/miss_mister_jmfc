@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ParticipantsPage() {
   const event = await prisma.votingEvent.findFirst({
-    where: { isActive: true },
+    orderBy: { createdAt: "desc" },
   });
 
   const participants = event
