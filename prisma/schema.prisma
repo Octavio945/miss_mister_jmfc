@@ -3,14 +3,24 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider = "postgresql"
+}
+
+enum Category {
+  MISS
+  MISTER
+}
+
+enum TxStatus {
+  PENDING
+  SUCCESS
+  FAILED
 }
 
 model VotingEvent {
   id          String   @id @default(uuid())
   title       String
-  description String?  @db.Text
+  description String?
   startDate   DateTime
   endDate     DateTime
   isActive    Boolean  @default(true)
@@ -27,7 +37,7 @@ model Participant {
   name        String
   category    Category // MISS ou MISTER
   number      Int
-  description String?  @db.Text
+  description String?
   imageUrl    String?
   totalVotes  Int      @default(0)
   createdAt   DateTime @default(now())
@@ -35,11 +45,6 @@ model Participant {
 
   event       VotingEvent @relation(fields: [eventId], references: [id])
   votes       TransactionItem[]
-}
-
-enum Category {
-  MISS
-  MISTER
 }
 
 model Voter {
@@ -71,12 +76,6 @@ model Transaction {
   event           VotingEvent @relation(fields: [eventId], references: [id])
   voter           Voter?      @relation(fields: [voterId], references: [id])
   items           TransactionItem[]
-}
-
-enum TxStatus {
-  PENDING
-  SUCCESS
-  FAILED
 }
 
 model TransactionItem {

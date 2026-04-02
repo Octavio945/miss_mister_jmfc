@@ -95,7 +95,7 @@ export function TextReveal({ text, className = "", delay = 0 }: any) {
 }
 
 // Parallax Image Background
-export function ParallaxHeroImage({ src, alt }: { src: string, alt: string }) {
+export function ParallaxHeroImage({ src, alt, imageClassName = "object-cover object-center" }: { src: string, alt: string, imageClassName?: string }) {
   const { scrollY } = useScroll();
   const y = useTransform(scrollY, [0, 1000], [0, 300]); // Bouge l'image plus lentement que le scroll
   
@@ -106,7 +106,7 @@ export function ParallaxHeroImage({ src, alt }: { src: string, alt: string }) {
         alt={alt}
         fill
         sizes="100vw"
-        className="object-cover object-center"
+        className={imageClassName}
         priority
       />
     </motion.div>

@@ -59,8 +59,11 @@ export default function Footer() {
 
       </div>
       
-      <div className="max-w-7xl mx-auto px-6 mt-16 pt-8 border-t border-white/10 text-center text-white/50 text-sm flex flex-col items-center justify-center">
+      <div className="max-w-7xl mx-auto px-6 mt-16 pt-8 border-t border-white/10 text-center text-white/50 text-sm flex flex-col md:flex-row items-center justify-between gap-4">
         <p>&copy; {new Date().getFullYear()} Miss & Mister JMFC Catholique du Bénin. Tous droits réservés.</p>
+        <Link href="/admin/login" className="hover:text-accent transition-colors flex items-center gap-1">
+          Accès Admin
+        </Link>
       </div>
     </footer>
   );

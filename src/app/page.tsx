@@ -1,9 +1,23 @@
 import { TransitionLink as Link } from "@/components/TransitionLink";
-import { ArrowRight, Trophy, Sparkles, Smartphone, ShieldCheck, HeartHandshake, Clock, ChevronDown, MessageCircle, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Trophy, Sparkles, Clock, CheckCircle2 } from "lucide-react";
 import { FadeIn, StaggerContainer, StaggerItem, TiltCard, MagneticButton, TextReveal, ParallaxHeroImage } from "@/components/AnimatedSection";
 import Image from "next/image";
+import { prisma } from "@/lib/prisma";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const event = await prisma.votingEvent.findFirst({
+    where: { isActive: true },
+  });
+
+  const participants = event
+    ? await prisma.participant.findMany({
+        where: { eventId: event.id },
+        orderBy: { totalVotes: "desc" },
+        take: 4, // Top 4 candidates for the homepage
+      })
+    : [];
   return (
     <>
       <div className="flex flex-col flex-1 items-center bg-background w-full">
@@ -12,12 +26,19 @@ export default function Home() {
         <section className="w-full min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
           
           <ParallaxHeroImage 
-            src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?q=80&w=2000&auto=format&fit=crop" 
-            alt="Mannequin Élégance" 
+            src="/images/fashionable-man-woman-posing.png" 
+            alt="Miss et Mister JMFC" 
+            imageClassName="object-contain object-bottom md:object-cover md:object-top opacity-90 w-full h-full pb-32 md:pb-0"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-[#0F172A]/70 to-[#0F172A]/40 z-10"></div>
           
           <div className="max-w-5xl mx-auto text-center space-y-8 z-40 px-6 mt-20 pb-32 relative">
+            <FadeIn delay={0.1} direction="down" className="flex justify-center mb-6">
+              <div className="relative w-32 h-32 md:w-48 md:h-48 drop-shadow-2xl">
+                <Image src="/images/logo.png" alt="Logo de l'événement" fill className="object-contain" priority />
+              </div>
+            </FadeIn>
+            
             <FadeIn delay={0.2} direction="down">
               <span className="inline-flex items-center space-x-2 py-1.5 px-4 rounded-full border border-accent/70 bg-black/40 backdrop-blur-md text-accent text-sm font-bold tracking-[0.2em] uppercase mb-4 shadow-[0_0_20px_rgba(212,175,55,0.2)]">
                 <Sparkles size={16} />
@@ -108,7 +129,7 @@ export default function Home() {
             <FadeIn direction="left" delay={0.4} className="relative aspect-square rounded-3xl overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.8)] border border-white/10 group">
               <div className="absolute inset-0 bg-accent/20 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
               <Image 
-                src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=1000&auto=format&fit=crop"
+                src="/images/outdoor-portrait-stylish-woman-black-blazer-suit-white-classic-hat.jpg"
                 alt="Notre mission et nos valeurs"
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"
@@ -137,37 +158,49 @@ export default function Home() {
             </FadeIn>
 
             <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8" delayOrder={0.2}>
-              {[1, 2, 3, 4].map((i) => (
-                <StaggerItem key={i}>
+              {participants.map((candidate, i) => (
+                <StaggerItem key={candidate.id}>
                   <TiltCard>
                     <div className="group flex flex-col bg-white dark:bg-black rounded-3xl overflow-hidden border border-black/5 dark:border-white/10 shadow-lg hover:shadow-2xl hover:border-accent/40 transition-all duration-300">
                       <div className="relative aspect-[4/5] overflow-hidden bg-black/5">
-                        <Image 
-                          src={`https://images.unsplash.com/photo-${['1544005313-94ddf0286df2', '1506794778202-cad84cf45f1d', '1534528741775-53994a69daeb', '1519085360753-af0119f7cbe7'][i-1]}?w=600&fit=crop&q=80`} 
-                          alt="Candidat" 
-                          fill 
-                          sizes="(max-width: 768px) 100vw, 25vw"
-                          className="object-cover group-hover:scale-110 transition-transform duration-[1s] ease-out" 
-                        />
+                        {candidate.imageUrl ? (
+                          <Image 
+                            src={candidate.imageUrl} 
+                            alt={candidate.name} 
+                            fill 
+                            sizes="(max-width: 768px) 100vw, 25vw"
+                            className="object-cover group-hover:scale-110 transition-transform duration-[1s] ease-out" 
+                            unoptimized={candidate.imageUrl.includes("dicebear")}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary/30 text-7xl font-serif font-bold">
+                            {candidate.name.charAt(0)}
+                          </div>
+                        )}
                         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-primary via-primary/80 to-transparent p-6 translate-y-[20%] opacity-0 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 ease-out">
-                          <Link href={`/participants/${i}`} className="text-white text-md font-bold flex items-center justify-between border-b border-accent/30 pb-2 hover:border-accent transition-colors">
+                          <Link href={`/participants/${candidate.id}`} className="text-white text-md font-bold flex items-center justify-between border-b border-accent/30 pb-2 hover:border-accent transition-colors">
                             <span>Voter pour ce profil</span>
                             <ArrowRight size={18} className="text-accent" />
                           </Link>
                         </div>
                       </div>
                       <div className="p-6 relative bg-white dark:bg-black z-20">
-                        <p className="text-xs font-bold uppercase text-accent mb-2 tracking-[0.2em]">Candidat N°0{i}</p>
-                        <h4 className="text-2xl font-serif font-bold text-primary dark:text-white mb-2 truncate group-hover:text-accent transition-colors">Nom et Prénom</h4>
+                        <p className="text-xs font-bold uppercase text-accent mb-2 tracking-[0.2em]">Candidat N°{String(candidate.number).padStart(2, "0")}</p>
+                        <h4 className="text-2xl font-serif font-bold text-primary dark:text-white mb-2 truncate group-hover:text-accent transition-colors">{candidate.name}</h4>
                         <div className="text-sm font-medium flex items-center space-x-2 text-foreground/60">
                           <Trophy size={16} className="text-accent" />
-                          <span>450 Votes</span>
+                          <span>{candidate.totalVotes.toLocaleString()} Votes</span>
                         </div>
                       </div>
                     </div>
                   </TiltCard>
                 </StaggerItem>
               ))}
+              {participants.length === 0 && (
+                 <div className="col-span-full text-center py-12 text-foreground/60">
+                   <p>Aucun candidat enregistré pour le moment.</p>
+                 </div>
+              )}
             </StaggerContainer>
           </div>
         </section>
@@ -229,44 +262,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* FAQ - FOIRE AUX QUESTIONS */}
-        <section id="faq" className="w-full py-32 bg-background">
-          <div className="max-w-4xl mx-auto px-6">
-            <FadeIn direction="up">
-              <div className="text-center mb-20">
-                <h2 className="text-sm font-bold tracking-widest uppercase text-accent mb-2 flex justify-center items-center"><span className="w-8 h-[1px] bg-accent mr-3"></span> Des questions ? <span className="w-8 h-[1px] bg-accent ml-3"></span></h2>
-                <h3 className="text-5xl md:text-6xl font-serif font-bold text-primary dark:text-white">Besoin d'aide ?</h3>
-              </div>
-            </FadeIn>
-            
-            <StaggerContainer className="space-y-6" delayOrder={0.2}>
-              {[
-                {q: "Puis-je voter plusieurs fois pour le même candidat ?", a: "Oui, c'est tout à fait possible et même encouragé ! Réglez le nombre de votes libres."},
-                {q: "Mon anonymat est-il vraiment garanti ?", a: "Totalement. Seul un sceau numérique (ex: VOTER-XXXX) est émis. Vos données restent dans l'ombre."},
-                {q: "Quels sont les moyens de paiement acceptés ?", a: "Paiement Mobile Money ultra-sécurisé via FedaPay / CinetPay : rapide, intuitif et encrypté."}
-              ].map((faq, i) => (
-                <StaggerItem key={i}>
-                  <div className="group border-l-[4px] border-l-transparent border-t border-b border-r border-black/10 dark:border-white/10 rounded-xl p-8 hover:shadow-[0_10px_30px_rgba(212,175,55,0.1)] transition-all duration-300 bg-white dark:bg-black hover:border-l-accent cursor-crosshair">
-                    <div className="flex justify-between items-center">
-                      <h4 className="text-2xl font-bold text-primary dark:text-white group-hover:text-accent transition-colors">{faq.q}</h4>
-                      <ChevronDown className="text-accent bg-accent/10 rounded-full p-2 group-hover:bg-accent group-hover:text-primary transition-colors" size={40} />
-                    </div>
-                    <p className="text-foreground/70 mt-6 leading-relaxed text-lg h-0 opacity-0 overflow-hidden group-hover:h-auto group-hover:opacity-100 transition-opacity duration-700">
-                      {faq.a}
-                    </p>
-                  </div>
-                </StaggerItem>
-              ))}
-            </StaggerContainer>
-            
-            <FadeIn delay={0.6} direction="up" className="text-center mt-16">
-              <Link href="/contact" className="inline-flex items-center space-x-3 text-primary dark:text-white font-bold hover:text-accent transition-colors border-b-2 border-transparent hover:border-accent pb-1">
-                <MessageCircle size={24} />
-                <span className="text-xl">Contactez le Support Paroissial</span>
-              </Link>
-            </FadeIn>
-          </div>
-        </section>
+
 
       </div>
     </>
