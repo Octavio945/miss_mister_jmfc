@@ -18,11 +18,10 @@ import type { Participant } from "@prisma/client";
 interface Props {
   participant: Participant;
   eventActive: boolean;
+  votePrice: number;
 }
 
-const VOTE_PRICE = 100; // FCFA par vote
-
-export default function VotePanel({ participant, eventActive }: Props) {
+export default function VotePanel({ participant, eventActive, votePrice }: Props) {
   const router = useRouter();
   const [voteCount, setVoteCount] = useState(1);
   const [isAnonymous, setIsAnonymous] = useState(false);
@@ -32,7 +31,7 @@ export default function VotePanel({ participant, eventActive }: Props) {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ type: "success" | "error"; msg: string } | null>(null);
 
-  const total = voteCount * VOTE_PRICE;
+  const total = voteCount * votePrice;
 
   const showToast = (type: "success" | "error", msg: string) => {
     setToast({ type, msg });

@@ -77,7 +77,11 @@ export default async function ParticipantDetail({
           </div>
 
           {/* Vote Panel (client component) */}
-          <VotePanel participant={participant} eventActive={participant.event.isActive} />
+          <VotePanel 
+            participant={participant} 
+            eventActive={participant.event.isActive} 
+            votePrice={participant.event.votePrice ?? 100}
+          />
 
         </div>
       </div>
