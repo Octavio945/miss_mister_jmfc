@@ -100,7 +100,7 @@ export default function AdminParticipants() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-serif font-bold text-primary dark:text-white">Candidats</h1>
-          <p className="text-foreground/60 mt-1">Gérez la liste des participants à l'événement.</p>
+          <p className="text-foreground/60 mt-1">Gérez la liste des participants à l&apos;événement.</p>
         </div>
         <Link 
           href="/admin/participants/new" 
@@ -187,7 +187,7 @@ export default function AdminParticipants() {
                 {participants.length === 0 && (
                   <tr>
                     <td colSpan={4} className="px-6 py-8 text-center text-foreground/60">
-                      Aucun candidat trouvé pour l'événement actif.
+                      Aucun candidat trouvé pour l&apos;événement actif.
                     </td>
                   </tr>
                 )}
@@ -249,7 +249,7 @@ export default function AdminParticipants() {
                 className="flex-1 px-4 py-3 rounded-xl font-medium bg-green-600 text-white hover:bg-green-700 transition-colors shadow-md flex items-center justify-center space-x-2 disabled:opacity-50"
               >
                 {voting ? <Loader2 size={18} className="animate-spin" /> : <Plus size={18} />}
-                <span>{voting ? "Ajout..." : "Valider l'ajout"}</span>
+                <span>{voting ? "Ajout..." : "Valider l&apos;ajout"}</span>
               </button>
             </div>
           </div>

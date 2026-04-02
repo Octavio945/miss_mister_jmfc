@@ -98,7 +98,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
             
             <p className="text-foreground/70 mb-8">
-              Êtes-vous sûr de vouloir vous déconnecter de l'espace administrateur ? Vous devrez saisir à nouveau le mot de passe pour y accéder.
+              Êtes-vous sûr de vouloir vous déconnecter de l&apos;espace administrateur ? Vous devrez saisir à nouveau le mot de passe pour y accéder.
             </p>
             
             <div className="flex space-x-4">

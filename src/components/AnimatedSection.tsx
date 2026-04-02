@@ -5,7 +5,14 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 
 // FadeIn directionnel simple
-export function FadeIn({ children, delay = 0, className = "", direction = "up" }: any) {
+interface FadeInProps {
+  children: React.ReactNode;
+  delay?: number;
+  className?: string;
+  direction?: "up" | "down" | "left" | "right";
+}
+
+export function FadeIn({ children, delay = 0, className = "", direction = "up" }: FadeInProps) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-10% 0px" });
 
@@ -35,7 +42,13 @@ export function FadeIn({ children, delay = 0, className = "", direction = "up" }
 }
 
 // Conteneur de cascade (Stagger)
-export function StaggerContainer({ children, className = "", delayOrder = 0.15 }: any) {
+interface StaggerContainerProps {
+  children: React.ReactNode;
+  className?: string;
+  delayOrder?: number;
+}
+
+export function StaggerContainer({ children, className = "", delayOrder = 0.15 }: StaggerContainerProps) {
   return (
     <motion.div
       initial="hidden"
@@ -52,7 +65,12 @@ export function StaggerContainer({ children, className = "", delayOrder = 0.15 }
   );
 }
 
-export function StaggerItem({ children, className = "" }: any) {
+interface StaggerItemProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export function StaggerItem({ children, className = "" }: StaggerItemProps) {
   return (
     <motion.div
       variants={{
@@ -67,7 +85,13 @@ export function StaggerItem({ children, className = "" }: any) {
 }
 
 // Effet d'écriture mot par mot cinématique
-export function TextReveal({ text, className = "", delay = 0 }: any) {
+interface TextRevealProps {
+  text: string;
+  className?: string;
+  delay?: number;
+}
+
+export function TextReveal({ text, className = "", delay = 0 }: TextRevealProps) {
   const words = text.split(" ");
   return (
     <motion.div 
@@ -114,7 +138,13 @@ export function ParallaxHeroImage({ src, alt, imageClassName = "object-cover obj
 }
 
 // Bouton Magnétique de Folie
-export function MagneticButton({ children, className = "", onClick }: any) {
+interface MagneticButtonProps {
+  children: React.ReactNode;
+  className?: string;
+  onClick?: () => void;
+}
+
+export function MagneticButton({ children, className = "", onClick }: MagneticButtonProps) {
   const ref = useRef<HTMLButtonElement>(null);
   const [position, setPosition] = useState({ x: 0, y: 0 });
 
@@ -146,7 +176,12 @@ export function MagneticButton({ children, className = "", onClick }: any) {
 }
 
 // Carte 3D Tilt Effect
-export function TiltCard({ children, className = "" }: any) {
+interface TiltCardProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export function TiltCard({ children, className = "" }: TiltCardProps) {
   const ref = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0);
   const y = useMotionValue(0);

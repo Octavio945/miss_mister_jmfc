@@ -36,7 +36,7 @@ export default async function Home() {
           <div className="max-w-5xl mx-auto text-center space-y-8 z-40 px-6 mt-20 pb-32 relative">
             <FadeIn delay={0.1} direction="down" className="flex justify-center mb-6">
               <div className="relative w-32 h-32 md:w-48 md:h-48 drop-shadow-2xl">
-                <Image src="/images/logo.png" alt="Logo de l'événement" fill className="object-contain" priority />
+                <Image src="/images/logo.png" alt="Logo de l&apos;événement" fill className="object-contain" priority />
               </div>
             </FadeIn>
             
@@ -49,7 +49,7 @@ export default async function Home() {
             </FadeIn>
             
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif font-bold tracking-tight text-white leading-tight drop-shadow-2xl">
-              <TextReveal text="Célébrons l'Élégance, la Foi et la Culture" delay={0.4} />
+              <TextReveal text="Célébrons l&apos;Élégance, la Foi et la Culture" delay={0.4} />
             </h1>
             
             <FadeIn delay={1.4} direction="up">
@@ -108,14 +108,14 @@ export default async function Home() {
                 <TextReveal text="Valoriser la beauté chrétienne et nos talents." />
               </div>
               <p className="text-white/80 text-lg leading-relaxed pt-2">
-                Le concours Miss & Mister JMFC n'est pas qu'une aventure esthétique. C'est une mission pastorale et culturelle 
+                Le concours Miss & Mister JMFC n&apos;est pas qu&apos;une aventure esthétique. C&apos;est une mission pastorale et culturelle 
                 qui vise à inculquer aux jeunes des valeurs essentielles : le respect de soi, la discipline, la rigueur et le dynamisme.
               </p>
               <StaggerContainer className="space-y-4 pt-4" delayOrder={0.2}>
                 {[
-                  "Rapprocher les familles de l'Église Catholique.",
-                  "Mettre en lumière l'héritage culturel Béninois.",
-                  "Introduire les jeunes paroissiens dans le monde de l'excellence."
+                  "Rapprocher les familles de l&apos;Église Catholique.",
+                  "Mettre en lumière l&apos;héritage culturel Béninois.",
+                  "Introduire les jeunes paroissiens dans le monde de l&apos;excellence."
                 ].map((txt, i) => (
                   <StaggerItem key={i}>
                     <li className="flex items-center space-x-3 text-white/90 bg-white/5 p-4 rounded-xl hover:bg-white/10 transition-colors border border-white/5 hover:border-accent/30 hover:shadow-[0_0_15px_rgba(212,175,55,0.1)] duration-500">
@@ -226,7 +226,7 @@ export default async function Home() {
                     </div>
                     <div>
                       <h4 className="text-2xl font-bold font-serif text-primary dark:text-white mb-4">La Sélection</h4>
-                      <p className="text-foreground/70 leading-relaxed text-lg">Parcourez le catalogue immersif et laissez-vous séduire par l'éloquence de votre candidat favori.</p>
+                      <p className="text-foreground/70 leading-relaxed text-lg">Parcourez le catalogue immersif et laissez-vous séduire par l&apos;éloquence de votre candidat favori.</p>
                     </div>
                   </div>
                 </TiltCard>
@@ -239,8 +239,8 @@ export default async function Home() {
                       2
                     </div>
                     <div>
-                      <h4 className="text-2xl font-bold font-serif text-primary dark:text-white mb-4">L'Identité</h4>
-                      <p className="text-foreground/70 leading-relaxed text-lg">Déclinez votre identité en toute transparence ou optez pour l'anonymat garanti par notre algorithme.</p>
+                      <h4 className="text-2xl font-bold font-serif text-primary dark:text-white mb-4">L&apos;Identité</h4>
+                      <p className="text-foreground/70 leading-relaxed text-lg">Déclinez votre identité en toute transparence ou optez pour l&apos;anonymat garanti par notre algorithme.</p>
                     </div>
                   </div>
                 </TiltCard>
@@ -254,7 +254,7 @@ export default async function Home() {
                     </div>
                     <div>
                       <h4 className="text-2xl font-bold font-serif text-primary dark:text-white mb-4">Le Sortilège</h4>
-                      <p className="text-foreground/70 leading-relaxed text-lg">Scellez votre vote en un clic grâce à l'intégration fluide de Mobile Money, 100% sécurisée.</p>
+                      <p className="text-foreground/70 leading-relaxed text-lg">Scellez votre vote en un clic grâce à l&apos;intégration fluide de Mobile Money, 100% sécurisée.</p>
                     </div>
                   </div>
                 </TiltCard>

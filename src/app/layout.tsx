@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   title: "Miss & Mister JMFC 2026",
   description: "Plateforme de vote pour le concours Miss & Mister Jeunesse Missionnaire Foi et Culture du Bénin",
   icons: {
-    icon: "/images/logo.png",
+    icon: "/favicon.png",
   },
 };
 

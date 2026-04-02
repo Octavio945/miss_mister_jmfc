@@ -18,7 +18,9 @@ type PaymentStatus = "waiting" | "success" | "failed";
 
 declare global {
   interface Window {
-    FedaPay?: any;
+    FedaPay?: {
+      init: (config: any) => { open: () => void };
+    };
   }
 }
 

@@ -10,7 +10,7 @@ export async function PUT(
     const body = await request.json();
     const { name, category, number, description, imageUrl, isActive } = body;
 
-    const dataToUpdate: any = {};
+    const dataToUpdate: Record<string, any> = {};
     if (name !== undefined) dataToUpdate.name = name;
     if (category !== undefined) dataToUpdate.category = category;
     if (number !== undefined) dataToUpdate.number = number;

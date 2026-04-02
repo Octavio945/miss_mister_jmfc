@@ -50,7 +50,7 @@ export default function AdminSettings() {
       setSuccess("Paramètres enregistrés avec succès.");
       router.refresh();
     } catch {
-      setError("Les paramètres n'ont pas pu être sauvegardés.");
+      setError("Les paramètres n&apos;ont pas pu être sauvegardés.");
     } finally {
       setSaving(false);
     }
@@ -100,7 +100,7 @@ export default function AdminSettings() {
           <Settings size={32} />
           Paramètres
         </h1>
-        <p className="text-foreground/60 mt-1">Gérez la configuration globale de l'événement.</p>
+        <p className="text-foreground/60 mt-1">Gérez la configuration globale de l&apos;événement.</p>
       </div>
 
       {error && (
@@ -118,14 +118,14 @@ export default function AdminSettings() {
       {/* General Settings */}
       <div className="bg-white dark:bg-[#111] rounded-3xl p-8 shadow-sm border border-black/5 dark:border-white/10">
         <h2 className="text-xl font-bold font-serif mb-6 border-b border-black/5 dark:border-white/10 pb-4">
-          Configuration de l'événement
+          Configuration de l&apos;événement
         </h2>
         
         {eventData ? (
           <form onSubmit={handleSaveSettings} className="space-y-6">
             <div className="flex items-center justify-between p-4 bg-black/5 dark:bg-white/5 rounded-2xl">
               <div>
-                <h3 className="font-bold">Statut de l'événement</h3>
+                <h3 className="font-bold">Statut de l&apos;événement</h3>
                 <p className="text-sm text-foreground/60">
                   Ouvrez ou fermez les votes. (Si fermé, les utilisateurs ne pourront plus voter).
                 </p>
@@ -174,7 +174,7 @@ export default function AdminSettings() {
             <div className="p-4 bg-black/5 dark:bg-white/5 rounded-2xl">
               <h3 className="font-bold mb-2">Prix unitaire du vote (FCFA)</h3>
               <p className="text-sm text-foreground/60 mb-4">
-                Définissez le coût d'un (1) vote. Ce montant sera utilisé pour calculer le total lors du paiement.
+                Définissez le coût d&apos;un (1) vote. Ce montant sera utilisé pour calculer le total lors du paiement.
               </p>
               <input
                 type="number"
@@ -197,7 +197,7 @@ export default function AdminSettings() {
             </div>
           </form>
         ) : (
-          <p className="text-foreground/60">Aucun événement n'a été trouvé.</p>
+          <p className="text-foreground/60">Aucun événement n&apos;a été trouvé.</p>
         )}
       </div>
 

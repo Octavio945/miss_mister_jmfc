@@ -59,8 +59,9 @@ export default function NewParticipantPage() {
 
       router.push("/admin/participants");
       router.refresh();
-    } catch (err: any) {
-      setError(err.message || "Erreur serveur.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Erreur serveur.";
+      setError(message);
     } finally {
       setLoading(false);
     }
