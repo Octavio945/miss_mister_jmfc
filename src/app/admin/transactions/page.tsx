@@ -58,10 +58,14 @@ export default async function AdminTransactions() {
                       {format(new Date(tx.createdAt), "dd MMM yyyy à HH:mm", { locale: fr })}
                     </td>
                     <td className="px-6 py-4">
-                      {tx.voter.isAnonymous ? (
-                        <span className="text-foreground/50 italic">Anonyme ({tx.voter.anonCode})</span>
+                      {tx.voter ? (
+                        tx.voter.isAnonymous ? (
+                          <span className="text-foreground/50 italic">Anonyme ({tx.voter.anonCode})</span>
+                        ) : (
+                          <span className="font-medium">{tx.voter.name || tx.voter.phone || "Inconnu"}</span>
+                        )
                       ) : (
-                        <span className="font-medium">{tx.voter.name || tx.voter.phone || "Inconnu"}</span>
+                        <span className="text-foreground/40 italic">Inconnu</span>
                       )}
                     </td>
                     <td className="px-6 py-4">

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   // Check if trying to access /admin routes
   if (request.nextUrl.pathname.startsWith('/admin')) {
     // Exclude /admin/login from the protection

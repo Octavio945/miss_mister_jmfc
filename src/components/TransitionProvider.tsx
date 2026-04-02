@@ -1,9 +1,8 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Crown } from "lucide-react";
 
 interface TransitionContextType {
   triggerTransition: (href: string) => void;
@@ -13,20 +12,35 @@ const TransitionContext = createContext<TransitionContextType>({ triggerTransiti
 
 export const useTransition = () => useContext(TransitionContext);
 
-export function TransitionProvider({ children }: { children: React.ReactNode }) {
-  const [loading, setLoading] = useState(false);
+/**
+ * Inner component to handle route changes and update loading state.
+ * This needs to be wrapped in Suspense because it uses useSearchParams.
+ */
+function TransitionHandler({ 
+  loading, 
+  setLoading 
+}: { 
+  loading: boolean; 
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>;
+}) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Lever le rideau une fois la route changée et l'appariement fait (fin de transition Next.js)
   useEffect(() => {
     if (loading) {
       const timer = setTimeout(() => {
         setLoading(false);
-      }, 500); // laisse la page s'afficher puis lève le rideau
+      }, 500); 
       return () => clearTimeout(timer);
     }
-  }, [pathname, searchParams]);
+  }, [pathname, searchParams, loading, setLoading]);
+
+  return null;
+}
+
+export function TransitionProvider({ children }: { children: React.ReactNode }) {
+  const [loading, setLoading] = useState(false);
+  const pathname = usePathname();
 
   // Rideau initial au premier load de l'application
   const [initialLoad, setInitialLoad] = useState(true);
@@ -44,6 +58,10 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
 
   return (
     <TransitionContext.Provider value={{ triggerTransition }}>
+      <Suspense fallback={null}>
+        <TransitionHandler loading={loading} setLoading={setLoading} />
+      </Suspense>
+      
       {children}
       
       <AnimatePresence mode="wait">
