@@ -53,7 +53,7 @@ export default function AdminLogin() {
         </Link>
       </div>
 
-      <div className="w-full max-w-md space-y-8 bg-white dark:bg-[#111] p-10 rounded-3xl shadow-xl border border-black/5 dark:border-white/10 relative z-10">
+      <div className="w-full max-w-md space-y-8 bg-white dark:bg-[#111] p-6 sm:p-10 rounded-3xl shadow-xl border border-black/5 dark:border-white/10 relative z-10">
         
         <div className="text-center space-y-4">
           <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">

@@ -29,26 +29,26 @@ export default async function Home() {
           <ParallaxHeroImage 
             src="/images/fashionable-man-woman-posing.png" 
             alt="Miss et Mister JMFC" 
-            imageClassName="object-contain object-bottom md:object-cover md:object-top opacity-90 w-full h-full pb-32 md:pb-0"
+            imageClassName="object-cover object-center md:object-top opacity-60 w-full h-full"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-[#0F172A]/70 to-[#0F172A]/40 z-10"></div>
           
-          <div className="max-w-5xl mx-auto text-center space-y-8 z-40 px-6 mt-20 pb-32 relative">
+          <div className="max-w-5xl mx-auto text-center space-y-6 md:space-y-8 z-40 px-6 pt-32 pb-20 md:pb-32 relative">
             <FadeIn delay={0.1} direction="down" className="flex justify-center mb-6">
-              <div className="relative w-32 h-32 md:w-48 md:h-48 drop-shadow-2xl">
+              <div className="relative w-24 h-24 sm:w-32 sm:h-32 md:w-48 md:h-48 drop-shadow-2xl">
                 <Image src="/images/logo.png" alt="Logo de l&apos;événement" fill className="object-contain" priority />
               </div>
             </FadeIn>
             
             <FadeIn delay={0.2} direction="down">
-              <span className="inline-flex items-center space-x-2 py-1.5 px-4 rounded-full border border-accent/70 bg-black/40 backdrop-blur-md text-accent text-sm font-bold tracking-[0.2em] uppercase mb-4 shadow-[0_0_20px_rgba(212,175,55,0.2)]">
-                <Sparkles size={16} />
+              <span className="inline-flex items-center space-x-1 sm:space-x-2 py-1.5 px-3 sm:px-4 rounded-full border border-accent/70 bg-black/40 backdrop-blur-md text-accent text-xs sm:text-sm font-bold tracking-[0.1em] sm:tracking-[0.2em] uppercase mb-4 shadow-[0_0_20px_rgba(212,175,55,0.2)]">
+                <Sparkles size={14} className="hidden sm:block" />
                 <span>Grande Finale • JMFC 2026</span>
-                <Sparkles size={16} />
+                <Sparkles size={14} className="hidden sm:block" />
               </span>
             </FadeIn>
             
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif font-bold tracking-tight text-white leading-tight drop-shadow-2xl">
+            <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-serif font-bold tracking-tight text-white leading-tight drop-shadow-2xl">
               <TextReveal text="Célébrons l&apos;Élégance, la Foi et la Culture" delay={0.4} />
             </h1>
             
@@ -158,7 +158,7 @@ export default async function Home() {
               </div>
             </FadeIn>
 
-            <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8" delayOrder={0.2}>
+            <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8" delayOrder={0.2}>
               {participants.map((candidate, i) => (
                 <StaggerItem key={candidate.id}>
                   <TiltCard>
@@ -217,7 +217,7 @@ export default async function Home() {
               </div>
             </FadeIn>
             
-            <StaggerContainer className="grid md:grid-cols-3 gap-16" delayOrder={0.3}>
+            <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-16" delayOrder={0.3}>
               <StaggerItem>
                 <TiltCard className="h-full">
                   <div className="flex flex-col items-center text-center p-10 bg-white/5 rounded-3xl border border-black/5 dark:border-white/5 hover:border-accent/40 shadow-xl transition-colors h-full">

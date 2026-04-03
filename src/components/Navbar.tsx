@@ -8,6 +8,7 @@ import Image from "next/image";
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const isSolid = scrolled || isOpen;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -18,27 +19,27 @@ export default function Navbar() {
   }, []);
 
   return (
-    <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'bg-background/90 backdrop-blur-md shadow-sm border-b border-black/5 dark:border-white/10 py-0' : 'bg-transparent py-2'}`}>
+    <nav className={`fixed w-full z-50 transition-all duration-300 ${isSolid ? 'bg-background/95 backdrop-blur-xl shadow-sm border-b border-black/5 dark:border-white/10 py-0' : 'bg-transparent py-2'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           <div className="flex-shrink-0 flex items-center">
-            <Link href="/" className="flex items-center space-x-3">
+            <Link href="/" className="flex items-center space-x-3" onClick={() => setIsOpen(false)}>
               <Image src="/images/logo.png" alt="Logo Miss & Mister JMFC" width={60} height={60} className="object-contain" priority />
               <div className="font-serif text-2xl font-bold text-accent drop-shadow-sm hidden sm:block">
-                Miss & Mister <span className={scrolled ? "text-foreground" : "text-white"}>JMFC</span>
+                Miss & Mister <span className={isSolid ? "text-foreground" : "text-white"}>JMFC</span>
               </div>
             </Link>
           </div>
           
           {/* Desktop Menu */}
           <div className="hidden lg:flex items-center space-x-6">
-            <Link href="/" className={`text-sm font-medium hover:text-accent transition-colors ${scrolled ? 'text-foreground/80' : 'text-white/90 drop-shadow-md'}`}>
+            <Link href="/" className={`text-sm font-medium hover:text-accent transition-colors ${isSolid ? 'text-foreground/80' : 'text-white/90 drop-shadow-md'}`}>
               Accueil
             </Link>
-            <Link href="/participants" className={`text-sm font-medium hover:text-accent transition-colors ${scrolled ? 'text-foreground/80' : 'text-white/90 drop-shadow-md'}`}>
+            <Link href="/participants" className={`text-sm font-medium hover:text-accent transition-colors ${isSolid ? 'text-foreground/80' : 'text-white/90 drop-shadow-md'}`}>
               Candidats
             </Link>
-            <Link href="/a-propos" className={`text-sm font-medium hover:text-accent transition-colors ${scrolled ? 'text-foreground/80' : 'text-white/90 drop-shadow-md'}`}>
+            <Link href="/a-propos" className={`text-sm font-medium hover:text-accent transition-colors ${isSolid ? 'text-foreground/80' : 'text-white/90 drop-shadow-md'}`}>
               À Propos
             </Link>
 
@@ -53,7 +54,7 @@ export default function Navbar() {
           <div className="lg:hidden flex items-center">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className={`transition-colors ${scrolled ? 'text-foreground hover:text-accent' : 'text-white hover:text-accent drop-shadow-md'}`}
+              className={`transition-colors ${isSolid ? 'text-foreground hover:text-accent' : 'text-white hover:text-accent drop-shadow-md'}`}
             >
               {isOpen ? <X size={28} /> : <Menu size={28} />}
             </button>

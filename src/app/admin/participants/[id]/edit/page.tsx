@@ -91,7 +91,7 @@ export default function EditParticipantPage({
         <h1 className="text-3xl font-serif font-bold text-primary dark:text-white">Modifier Candidat</h1>
       </div>
 
-      <div className="bg-white dark:bg-[#111] rounded-3xl p-8 shadow-sm border border-black/5 dark:border-white/10 min-h-[400px] relative">
+      <div className="bg-white dark:bg-[#111] rounded-3xl p-6 md:p-8 shadow-sm border border-black/5 dark:border-white/10 min-h-[400px] relative">
         {fetching ? (
            <div className="absolute inset-0 flex items-center justify-center">
              <Loader2 className="animate-spin text-primary" size={32} />

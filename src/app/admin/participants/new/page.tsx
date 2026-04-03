@@ -77,7 +77,7 @@ export default function NewParticipantPage() {
         <h1 className="text-3xl font-serif font-bold text-primary dark:text-white">Nouveau Candidat</h1>
       </div>
 
-      <div className="bg-white dark:bg-[#111] rounded-3xl p-8 shadow-sm border border-black/5 dark:border-white/10">
+      <div className="bg-white dark:bg-[#111] rounded-3xl p-6 md:p-8 shadow-sm border border-black/5 dark:border-white/10">
         {error && (
           <div className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900">
             {error}

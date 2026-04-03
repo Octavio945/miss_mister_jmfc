@@ -83,7 +83,7 @@ export default function VotePanel({ participant, eventActive, votePrice }: Props
   };
 
   return (
-    <div className="bg-white dark:bg-[#111] p-8 md:p-10 rounded-3xl shadow-xl border border-black/5 dark:border-white/5 sticky top-32">
+    <div className="bg-white dark:bg-[#111] p-6 md:p-8 lg:p-10 rounded-3xl shadow-xl border border-black/5 dark:border-white/5 sticky top-24 md:top-32">
 
       {/* Score */}
       <div className="flex items-center justify-between mb-8 pb-8 border-b border-black/5 dark:border-white/10">
