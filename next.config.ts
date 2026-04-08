@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'api.dicebear.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'ita0aucajmrf9ahw.public.blob.vercel-storage.com',
+      },
     ],
   },
 };

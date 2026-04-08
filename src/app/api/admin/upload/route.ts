@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { writeFile } from "fs/promises";
-import path from "path";
+import { put } from "@vercel/blob";
 import { nanoid } from "nanoid";
 
 export async function POST(request: Request) {
@@ -12,18 +11,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Aucun fichier reçu." }, { status: 400 });
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    // Créer un nom de fichier unique sans espaces
-    const filename = `${nanoid()}-${file.name.replace(/\s/g, "_")}`;
+    const filename = `${nanoid()}-${file.name.replace(/\\s/g, "_")}`;
     
-    const filepath = path.join(process.cwd(), "public", "uploads", filename);
+    // Upload vers Vercel Blob
+    const blob = await put(filename, file, { 
+      access: 'public',
+    });
 
-    await writeFile(filepath, buffer);
-
-    // Renvoyer l'URL publique de l'image
-    const imageUrl = `/uploads/${filename}`;
-
-    return NextResponse.json({ success: true, imageUrl });
+    return NextResponse.json({ success: true, imageUrl: blob.url });
   } catch (error) {
     console.error("[POST /api/admin/upload]", error);
     return NextResponse.json({ error: "Erreur serveur lors de l'upload." }, { status: 500 });
