@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { createHmac } from "crypto";
+import { sendAdminNotification } from "@/lib/mail";
 
 const FEDAPAY_SECRET = process.env.FEDAPAY_SECRET_KEY ?? "";
 
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
     // ── Retrouver la transaction ─────────────────────────────────────────────
     const transaction = await prisma.transaction.findUnique({
       where: { reference: externalRef },
-      include: { items: true },
+      include: { items: { include: { participant: true } } },
     });
 
     if (!transaction) {
@@ -77,6 +78,18 @@ export async function POST(request: Request) {
         });
       }
     });
+
+    // 3. Envoyer la notification
+    const firstItem = transaction.items[0];
+    const participantName = firstItem?.participant?.name || "Inconnu";
+    const totalVotes = transaction.items.reduce((sum, item) => sum + item.numberOfVotes, 0);
+
+    await sendAdminNotification(
+      participantName,
+      totalVotes,
+      transaction.amount,
+      externalRef
+    );
 
     console.log(`✅ [Webhook] Transaction ${externalRef} confirmée.`);
     return NextResponse.json({ received: true, success: true });
