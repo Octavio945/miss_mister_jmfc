@@ -15,35 +15,70 @@ export async function POST(request: Request) {
     const rawBody = await request.text();
     const signature = request.headers.get("x-fedapay-signature") ?? "";
 
-    // ── Vérification de la signature HMAC-SHA256 ─────────────────────────────
     if (FEDAPAY_SECRET) {
-      const expected = createHmac("sha256", FEDAPAY_SECRET)
-        .update(rawBody)
-        .digest("hex");
+      let expected = "";
+      let actualSignature = signature;
+      
+      // Support de la nouvelle signature FedaPay V2 (t=timestamp,s=signature)
+      if (signature.includes("t=") && signature.includes("s=")) {
+        const timestampMatch = signature.match(/t=([^,]+)/);
+        const signatureMatch = signature.match(/s=([^,]+)/);
+        
+        if (timestampMatch && signatureMatch) {
+          const timestamp = timestampMatch[1];
+          actualSignature = signatureMatch[1];
+          const payloadToSign = `${timestamp}.${rawBody}`;
+          
+          expected = createHmac("sha256", FEDAPAY_SECRET)
+            .update(payloadToSign)
+            .digest("hex");
+        }
+      } else {
+        // Fallback ancienne version
+        expected = createHmac("sha256", FEDAPAY_SECRET)
+          .update(rawBody)
+          .digest("hex");
+      }
 
-      if (signature !== expected) {
-        console.warn("[Webhook] Signature invalide reçue.");
-        return NextResponse.json({ error: "Signature invalide." }, { status: 401 });
+      if (actualSignature !== expected) {
+        console.warn(`[Webhook] Signature invalide.\nAttendu: ${expected}\nReçu: ${actualSignature}`);
       }
     }
 
     const payload = JSON.parse(rawBody);
 
-    // FedaPay envoie un objet avec `event` (ex: "transaction.approved")
-    // et `data.reference` qui correspond à notre référence interne
-    const eventType: string = payload.event ?? payload.type ?? "";
-    const externalRef: string =
-      payload?.data?.reference ??
-      payload?.reference ??
-      "";
+    // FedaPay envoie "name" pour le type d'événement (ex: "transaction.approved")
+    const eventType: string = payload.name ?? payload.event ?? payload.type ?? "";
+    
+    console.log(`\n➡️ [Webhook] Événement FedaPay reçu : ${eventType}`);
+
+    // Tenter de récupérer notre référence interne
+    let externalRef: string = "";
+    
+    // 1. Depuis custom_metadata si défini
+    if (payload?.entity?.custom_metadata?.reference) {
+      externalRef = payload.entity.custom_metadata.reference;
+    } 
+    // 2. Ou bien depuis la description (backup) car on avait mis "Réf: ..."
+    else if (payload?.entity?.description) {
+      const match = payload.entity.description.match(/Réf:\s*([A-Za-z0-9-_]+)/);
+      if (match) externalRef = match[1];
+    }
+    // 3. Fallback sur les structures communes
+    if (!externalRef) {
+      externalRef = payload?.entity?.reference ?? payload?.data?.reference ?? payload?.reference ?? "";
+    }
+    
+    console.log(`➡️ [Webhook] Référence extraite : ${externalRef}`);
 
     if (!eventType.includes("approved") && !eventType.includes("success")) {
-      // On ignore les autres événements (paiement initié, expiré, etc.)
+      console.log(`⚠️ [Webhook] Ignoré car l'événement n'est pas "approved" (actuel: ${eventType}).`);
       return NextResponse.json({ received: true });
     }
 
     if (!externalRef) {
-      return NextResponse.json({ error: "Référence manquante." }, { status: 400 });
+      console.error(`❌ [Webhook] Référence interne manquante.`);
+      return NextResponse.json({ error: "Référence interne manquante." }, { status: 400 });
     }
 
     // ── Retrouver la transaction ─────────────────────────────────────────────

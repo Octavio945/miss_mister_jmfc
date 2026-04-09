@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: [
+    "trappy-catastrophically-sha.ngrok-free.dev",
+    "localtunnel.me"
+  ] as string[],
   images: {
     remotePatterns: [
       {

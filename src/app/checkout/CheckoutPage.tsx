@@ -68,8 +68,12 @@ export default function CheckoutPage() {
   const openFedaPay = () => {
     if (!window.FedaPay || !sdkReady) return;
 
+    const publicKey = process.env.NEXT_PUBLIC_FEDAPAY_PUBLIC_KEY || "";
+    const isSandbox = publicKey.includes("sandbox");
+
     window.FedaPay.init({
-      public_key: process.env.NEXT_PUBLIC_FEDAPAY_PUBLIC_KEY,
+      public_key: publicKey,
+      environment: isSandbox ? "sandbox" : "live",
       transaction: {
         amount: amount,
         description: `${voteCount} vote(s) pour ${participantName} - Réf: ${reference}`,
