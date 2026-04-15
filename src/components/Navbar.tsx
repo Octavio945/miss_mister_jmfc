@@ -24,7 +24,15 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-20">
           <div className="flex-shrink-0 flex items-center">
             <Link href="/" className="flex items-center space-x-3" onClick={() => setIsOpen(false)}>
-              <Image src="/images/logo.png" alt="Logo Miss & Mister JMFC" width={60} height={60} className="object-contain" priority />
+              <Image 
+                src="/images/logo.png" 
+                alt="Logo Miss & Mister JMFC" 
+                width={60} 
+                height={60} 
+                className="object-contain" 
+                style={{ height: "auto" }}
+                priority 
+              />
               <div className="font-serif text-2xl font-bold text-accent drop-shadow-sm hidden sm:block">
                 Miss & Mister <span className={isSolid ? "text-foreground" : "text-white"}>JMFC</span>
               </div>

@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
     "localtunnel.me"
   ] as string[],
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',

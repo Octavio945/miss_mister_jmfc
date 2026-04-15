@@ -36,7 +36,13 @@ export default async function Home() {
           <div className="max-w-5xl mx-auto text-center space-y-6 md:space-y-8 z-40 px-6 pt-32 pb-20 md:pb-32 relative">
             <FadeIn delay={0.1} direction="down" className="flex justify-center mb-6">
               <div className="relative w-24 h-24 sm:w-32 sm:h-32 md:w-48 md:h-48 drop-shadow-2xl">
-                <Image src="/images/logo.png" alt="Logo de l&apos;événement" fill className="object-contain" priority />
+                <Image 
+                  src="/images/logo.png" 
+                  alt="Logo de l'événement" 
+                  fill 
+                  className="object-contain" 
+                  priority 
+                />
               </div>
             </FadeIn>
             

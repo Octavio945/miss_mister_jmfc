@@ -64,14 +64,17 @@ export default function VotePanel({ participant, eventActive, votePrice }: Props
         return;
       }
 
-      // Rediriger vers la page checkout avec les paramètres de la transaction
+      // FIX Bug 2 : fedapayId retiré des params URL
+      // Il sera récupéré côté serveur via /api/checkout/init-popup
       const params = new URLSearchParams({
         ref: data.reference,
         amount: String(data.amount),
+        eventId: participant.eventId,
         participantId: participant.id,
         participantName: participant.name,
         voteCount: String(voteCount),
         anonCode: data.anonCode ?? "",
+        // fedapayId retiré intentionnellement — sécurité
       });
 
       router.push(`/checkout?${params.toString()}`);
@@ -144,7 +147,7 @@ export default function VotePanel({ participant, eventActive, votePrice }: Props
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Prénom &amp; Nom (optionnel)"
+                  placeholder="Prénom & Nom (optionnel)"
                   className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
                 <div className="relative">

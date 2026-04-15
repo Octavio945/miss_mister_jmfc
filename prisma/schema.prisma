@@ -6,6 +6,75 @@ datasource db {
   provider = "postgresql"
 }
 
+model VotingEvent {
+  id           String        @id @default(uuid())
+  title        String
+  description  String?
+  startDate    DateTime
+  endDate      DateTime
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  votePrice    Int           @default(100)
+  participants Participant[]
+  transactions Transaction[]
+}
+
+model Participant {
+  id          String            @id @default(uuid())
+  eventId     String
+  name        String
+  category    Category
+  number      Int
+  description String?
+  imageUrl    String?
+  totalVotes  Int               @default(0)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  event       VotingEvent       @relation(fields: [eventId], references: [id])
+  votes       TransactionItem[]
+}
+
+model Voter {
+  id           String        @id @default(uuid())
+  name         String?
+  email        String?
+  phone        String?
+  isAnonymous  Boolean       @default(false)
+  anonCode     String?       @unique
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  transactions Transaction[]
+}
+
+model Transaction {
+  id            String            @id @default(uuid())
+  eventId       String
+  voterId       String?
+  reference     String            @unique
+  amount        Float
+  currency      String            @default("XOF")
+  status        TxStatus          @default(PENDING)
+  paymentMethod String?
+  fedapayId     String?           @unique
+  paidAt        DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  event         VotingEvent       @relation(fields: [eventId], references: [id])
+  voter         Voter?            @relation(fields: [voterId], references: [id])
+  items         TransactionItem[]
+}
+
+model TransactionItem {
+  id            String      @id @default(uuid())
+  transactionId String
+  participantId String
+  numberOfVotes Int
+  amount        Float
+  participant   Participant @relation(fields: [participantId], references: [id])
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+}
+
 enum Category {
   MISS
   MISTER
@@ -15,77 +84,4 @@ enum TxStatus {
   PENDING
   SUCCESS
   FAILED
-}
-
-model VotingEvent {
-  id          String   @id @default(uuid())
-  title       String
-  description String?
-  startDate   DateTime
-  endDate     DateTime
-  isActive    Boolean  @default(true)
-  votePrice   Int      @default(100) // Prix en FCFA
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  participants Participant[]
-  transactions Transaction[]
-}
-
-model Participant {
-  id          String   @id @default(uuid())
-  eventId     String
-  name        String
-  category    Category // MISS ou MISTER
-  number      Int
-  description String?
-  imageUrl    String?
-  totalVotes  Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  event       VotingEvent @relation(fields: [eventId], references: [id])
-  votes       TransactionItem[]
-}
-
-model Voter {
-  id          String   @id @default(uuid())
-  name        String?
-  email       String?
-  phone       String?
-  isAnonymous Boolean  @default(false)
-  anonCode    String?  @unique
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  transactions Transaction[]
-}
-
-model Transaction {
-  id              String   @id @default(uuid())
-  eventId         String
-  voterId         String?  
-  reference       String   @unique // Référence FedaPay ou CinetPay
-  amount          Float
-  currency        String   @default("XOF")
-  status          TxStatus @default(PENDING)
-  paymentMethod   String?  // ex: "MTN", "MOOV"
-  paidAt          DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  event           VotingEvent @relation(fields: [eventId], references: [id])
-  voter           Voter?      @relation(fields: [voterId], references: [id])
-  items           TransactionItem[]
-}
-
-model TransactionItem {
-  id            String   @id @default(uuid())
-  transactionId String
-  participantId String
-  numberOfVotes Int
-  amount        Float    // Montant partiel attribué à ce participant
-  
-  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-  participant   Participant @relation(fields: [participantId], references: [id])
 }

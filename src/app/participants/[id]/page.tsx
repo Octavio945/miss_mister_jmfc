@@ -42,15 +42,16 @@ export default async function ParticipantDetail({
           <div className="space-y-6">
             <div className="relative aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl border-4 border-white dark:border-white/5 bg-black/5 dark:bg-white/5">
               {participant.imageUrl ? (
-                <Image
-                  src={participant.imageUrl}
-                  alt={participant.name}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                  className="object-cover"
-                  priority
-                  unoptimized={participant.imageUrl.includes("dicebear")}
-                />
+                  <Image
+                    src={participant.imageUrl}
+                    alt={participant.name}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    className="object-cover"
+                    priority
+                    loading="eager"
+                    unoptimized={participant.imageUrl.includes("dicebear")}
+                  />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary/20 text-9xl font-serif font-bold">
                   {participant.name.charAt(0)}

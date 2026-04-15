@@ -1,3 +1,5 @@
+// src/app/api/checkout/route.ts
+
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
@@ -7,6 +9,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { participantId, voteCount, voterName, voterPhone, voterEmail, isAnonymous } = body;
 
+    // 1. Vérifications
     if (!participantId || !voteCount || typeof voteCount !== "number" || voteCount < 1) {
       return NextResponse.json(
         { error: "participantId et voteCount (≥ 1) sont requis." },
@@ -30,14 +33,29 @@ export async function POST(request: Request) {
       );
     }
 
+    // 2. Créer ou trouver le voter
+    // FIX Bug 1 : recherche par phone OU email pour éviter les doublons
     let voter;
+    let anonCode: string | null = null;
+
     if (isAnonymous) {
-      const anonCode = `VOTER-${nanoid(6).toUpperCase()}`;
+      anonCode = `VOTER-${nanoid(6).toUpperCase()}`;
       voter = await prisma.voter.create({ data: { isAnonymous: true, anonCode } });
     } else {
-      if (voterPhone) {
-        voter = await prisma.voter.findFirst({ where: { phone: voterPhone } });
+      // Construire les conditions de recherche dynamiquement
+      const orConditions: object[] = [];
+      if (voterPhone) orConditions.push({ phone: voterPhone });
+      if (voterEmail) orConditions.push({ email: voterEmail });
+
+      if (orConditions.length > 0) {
+        voter = await prisma.voter.findFirst({
+          where: {
+            isAnonymous: false,
+            OR: orConditions,
+          },
+        });
       }
+
       if (!voter) {
         voter = await prisma.voter.create({
           data: {
@@ -47,15 +65,23 @@ export async function POST(request: Request) {
             isAnonymous: false,
           },
         });
+      } else {
+        // Mettre à jour le nom si fourni et absent
+        if (voterName && !voter.name) {
+          voter = await prisma.voter.update({
+            where: { id: voter.id },
+            data: { name: voterName },
+          });
+        }
       }
     }
 
-    // Utiliser le prix dynamique de l'événement (configurable par l'admin)
+    // 3. Calculer le montant
     const votePrice = participant.event.votePrice ?? 100;
     const amount = voteCount * votePrice;
     const reference = `TX-${nanoid(12).toUpperCase()}`;
 
-    // ── Créer la transaction PENDING ─────────────────────────────────────────
+    // 4. Créer la transaction PENDING dans la BDD
     const transaction = await prisma.transaction.create({
       data: {
         eventId: participant.eventId,
@@ -74,9 +100,71 @@ export async function POST(request: Request) {
       },
     });
 
-    // ── TODO Phase 2+ : Appeler FedaPay ici pour obtenir une redirectUrl ─────
-    // Pour l'instant on retourne la référence pour que le frontend puisse
-    // simuler ou appeler FedaPay côté client.
+    // 5. Appel à FedaPay
+    const secretKey = process.env.FEDAPAY_SECRET_KEY;
+    const isSandbox = secretKey?.includes("sandbox");
+    const apiUrl = isSandbox
+      ? "https://sandbox-api.fedapay.com/v1"
+      : "https://api.fedapay.com/v1";
+
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      (process.env.NODE_ENV === "development"
+        ? "http://localhost:3000"
+        : "https://ton-domaine.com");
+
+    console.log("🔄 Création transaction FedaPay...");
+
+    const fedapayResponse = await fetch(`${apiUrl}/transactions`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${secretKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        amount: Math.round(amount),
+        currency: { iso: "XOF" },
+        description: `${voteCount} vote(s) pour ${participant.name}`,
+        reference: reference,
+        callback_url: `${baseUrl}/api/fedapay-webhook`,
+        customer: {
+          firstname: voter.name || "Votant",
+          lastname: "",
+          email: voter.email || `vote_${reference.substring(0, 8)}@temp.com`,
+        },
+      }),
+    });
+
+    const fedapayRaw = await fedapayResponse.json();
+
+    if (!fedapayResponse.ok) {
+      console.error("❌ Erreur FedaPay:", fedapayRaw);
+      // Nettoyer la transaction en BDD
+      await prisma.transaction.delete({ where: { id: transaction.id } });
+      return NextResponse.json(
+        { error: fedapayRaw.message || "Erreur lors de la création du paiement FedaPay" },
+        { status: 500 }
+      );
+    }
+
+    // FedaPay retourne l'objet imbriqué sous la clé "v1/transaction"
+    const fedapayTransaction = fedapayRaw["v1/transaction"] ?? fedapayRaw;
+    const fedapayTransactionId = String(fedapayTransaction?.id ?? "");
+
+    console.log("✅ Transaction FedaPay créée:", fedapayTransactionId);
+
+    // Enregistrer l'ID FedaPay dans notre BDD
+    if (fedapayTransactionId) {
+      await prisma.transaction.update({
+        where: { id: transaction.id },
+        data: { fedapayId: fedapayTransactionId },
+      });
+      console.log("💾 ID FedaPay lié à la transaction BDD");
+    }
+
+    // 6. Retourner les infos au frontend
+    // FIX Bug 2 : on ne retourne PLUS fedapayTransactionId au client
+    // Le frontend récupérera le fedapayId via /api/checkout/init-popup
     return NextResponse.json({
       success: true,
       transactionId: transaction.id,
@@ -84,8 +172,8 @@ export async function POST(request: Request) {
       amount: transaction.amount,
       currency: transaction.currency,
       voterId: voter.id,
-      anonCode: voter.isAnonymous ? voter.anonCode : null,
-      // paymentUrl: await createFedaPayLink(transaction)  ← à brancher
+      anonCode: anonCode,
+      // fedapayTransactionId retiré intentionnellement pour la sécurité
     });
   } catch (error) {
     console.error("[POST /api/checkout]", error);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Share2, Check, Link2 } from "lucide-react";
 
 interface ShareButtonProps {
@@ -10,6 +10,12 @@ interface ShareButtonProps {
 
 export default function ShareButton({ participantName, participantId }: ShareButtonProps) {
   const [copied, setCopied] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Éviter les erreurs d'hydratation en attendant le montage côté client
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleShare = async () => {
     const url = `${window.location.origin}/participants/${participantId}`;
@@ -20,7 +26,7 @@ export default function ShareButton({ participantName, participantId }: ShareBut
     };
 
     try {
-      if (navigator.share) {
+      if (typeof navigator !== 'undefined' && navigator.share) {
         await navigator.share(shareData);
       } else {
         await navigator.clipboard.writeText(url);
@@ -57,8 +63,8 @@ export default function ShareButton({ participantName, participantId }: ShareBut
         )}
       </button>
 
-      {/* Tooltip discret */}
-      {!navigator?.share && !copied && (
+      {/* Tooltip discret - Affiché uniquement après montage si navigator.share n'est pas dispo */}
+      {mounted && !navigator?.share && !copied && (
         <p className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] text-foreground/40 whitespace-nowrap">
           <Link2 size={10} className="inline mr-1" />
           Copie le lien

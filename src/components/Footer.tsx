@@ -11,12 +11,12 @@ export default function Footer() {
         <div className="space-y-5">
           <div className="flex items-center gap-4">
             <div className="relative w-14 h-14 flex-shrink-0">
-              <Image
-                src="/images/logo.png"
-                alt="Logo Miss & Mister JMFC"
-                fill
-                className="object-contain drop-shadow-lg"
-              />
+                <Image
+                  src="/images/logo.png"
+                  alt="Logo Miss & Mister JMFC"
+                  fill
+                  className="object-contain drop-shadow-lg"
+                />
             </div>
             <h3 className="font-serif text-2xl font-bold leading-tight">
               Miss &amp; Mister <span className="text-accent">JMFC</span>
