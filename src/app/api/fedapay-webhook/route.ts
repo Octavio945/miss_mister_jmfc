@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import crypto from "crypto";
+import { sendTelegramNotification } from "@/lib/telegram";
 
 // ✅ Vérification de signature HMAC-SHA256 FedaPay
 function verifyFedaPaySignature(payload: string, signature: string, secret: string): boolean {
@@ -18,15 +19,6 @@ function verifyFedaPaySignature(payload: string, signature: string, secret: stri
   }
 }
 
-// Fonction pour envoyer une notification email (optionnel)
-async function sendAdminNotification(participantName: string, voteCount: number, amount: number, reference: string) {
-  try {
-    // Tu peux implémenter l'envoi d'email ici si besoin
-    console.log(`📧 Notification: ${voteCount} votes pour ${participantName} - ${amount} FCFA - Ref: ${reference}`);
-  } catch (error) {
-    console.error("Erreur envoi email:", error);
-  }
-}
 
 export async function POST(request: Request) {
   try {
@@ -171,8 +163,21 @@ async function processWebhook(dbTransaction: any, fedaPayTransaction: any, statu
         console.log(`🎉 +${item.numberOfVotes} votes pour participant ${item.participant.name}`);
       }
 
-      // Envoyer notification email (si possible)
-      // await sendAdminNotification(...)
+      // Préparer le message Telegram
+      const participantsList = dbTransaction.items
+        .map((i: any) => `👤 <b>Candidat :</b> ${i.participant.name} (+${i.numberOfVotes} votes)`)
+        .join("\n");
+
+      const message = `
+<b>🚀 Nouveau Paiement Réussi !</b>
+━━━━━━━━━━━━━━━━━━
+${participantsList}
+💰 <b>Montant :</b> ${dbTransaction.amount.toLocaleString()} FCFA
+📑 <b>Réf :</b> <code>${reference}</code>
+━━━━━━━━━━━━━━━━━━
+<i>Les votes ont été automatiquement ajoutés.</i>
+      `;
+      await sendTelegramNotification(message.trim());
       
     } else if (status === "canceled" || status === "refused" || status === "declined") {
       // ❌ PAIEMENT ÉCHOUÉ ou ANNULÉ

@@ -109,9 +109,7 @@ export async function POST(request: Request) {
 
     const baseUrl =
       process.env.NEXT_PUBLIC_APP_URL ||
-      (process.env.NODE_ENV === "development"
-        ? "http://localhost:3000"
-        : "https://ton-domaine.com");
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
 
     console.log("🔄 Création transaction FedaPay...");
 
