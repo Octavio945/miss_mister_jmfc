@@ -32,6 +32,7 @@ export default function VotePanel({ participant, eventActive, votePrice }: Props
   const [toast, setToast] = useState<{ type: "success" | "error"; msg: string } | null>(null);
 
   const total = voteCount * votePrice;
+  const isTooLow = total > 0 && total < 100;
 
   const showToast = (type: "success" | "error", msg: string) => {
     setToast({ type, msg });
@@ -212,13 +213,22 @@ export default function VotePanel({ participant, eventActive, votePrice }: Props
 
             <div className="flex items-center justify-between text-xl font-bold">
               <span>Total</span>
-              <span className="text-accent">{total.toLocaleString()} FCFA</span>
+              <span className={`transition-colors ${isTooLow ? "text-red-500" : "text-accent"}`}>
+                {total.toLocaleString()} FCFA
+              </span>
             </div>
+
+            {isTooLow && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-xs text-red-600 dark:text-red-400 space-y-1">
+                <p className="font-bold underline">Montant insuffisant</p>
+                <p>FedaPay exige un minimum de 100 FCFA par transaction. Veuillez ajouter plus de votes pour continuer.</p>
+              </div>
+            )}
 
             <button
               id="vote-submit"
               onClick={handleVote}
-              disabled={loading}
+              disabled={loading || isTooLow}
               className="w-full h-14 rounded-full bg-primary text-white flex items-center justify-center space-x-2 text-lg font-medium hover:bg-primary/90 transition-all hover:-translate-y-0.5 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
               {loading ? (

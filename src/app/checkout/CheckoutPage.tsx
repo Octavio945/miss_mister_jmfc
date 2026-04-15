@@ -171,6 +171,13 @@ export default function CheckoutPage() {
         // si PENDING on ne fait rien — l'utilisateur doit cliquer sur "Payer"
       });
     }
+
+    // ✅ FIX Bug Loader Infini : Si le SDK est déjà chargé par une visite précédente,
+    // on le marked comme prêt immédiatement sans attendre l'événement onLoad du Script Next.js
+    if (typeof window !== "undefined" && window.FedaPay) {
+      console.log("⚡ SDK FedaPay déjà présent dans window, prêt immédiatement.");
+      setSdkReady(true);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

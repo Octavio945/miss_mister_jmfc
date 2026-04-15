@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     // 1. Vérifications
     if (!participantId || !voteCount || typeof voteCount !== "number" || voteCount < 1) {
       return NextResponse.json(
-        { error: "participantId et voteCount (≥ 1) sont requis." },
+        { error: "Paramètres invalides : l'ID du candidat et un nombre de votes positif sont requis." },
         { status: 400 }
       );
     }
@@ -79,6 +79,15 @@ export async function POST(request: Request) {
     // 3. Calculer le montant
     const votePrice = participant.event.votePrice ?? 100;
     const amount = voteCount * votePrice;
+
+    // ✅ NOUVELLE VÉRIFICATION : Montant minimum FedaPay (100 XOF)
+    if (amount < 100) {
+      return NextResponse.json(
+        { error: `Le montant total (${amount} XOF) est inférieur au minimum autorisé par FedaPay (100 XOF). Veuillez augmenter le nombre de votes.` },
+        { status: 400 }
+      );
+    }
+
     const reference = `TX-${nanoid(12).toUpperCase()}`;
 
     // 4. Créer la transaction PENDING dans la BDD
