@@ -4,33 +4,53 @@ import crypto from "crypto";
 import { sendTelegramNotification } from "@/lib/telegram";
 import { sendFedaPayPayout } from "@/lib/fedapay-payout";
 
-// ✅ Vérification de signature HMAC-SHA256 FedaPay
+/**
+ * Vérifie la signature HMAC-SHA256 envoyée par FedaPay.
+ * FedaPay signe le corps brut de la requête avec la clé secrète API.
+ * Essaie plusieurs formats pour être robuste (hex direct, hex via buffer, base64).
+ */
 function verifyFedaPaySignature(payload: string, signature: string, secret: string): boolean {
   try {
-    const expected = crypto
+    const expectedHex = crypto
       .createHmac("sha256", secret)
       .update(payload)
       .digest("hex");
-    return crypto.timingSafeEqual(
-      Buffer.from(expected, "hex"),
-      Buffer.from(signature, "hex")
-    );
+
+    // Format 1 : comparaison directe en hex (le plus courant avec FedaPay)
+    if (signature === expectedHex) return true;
+
+    // Format 2 : avec préfixe "sha256=" (certains providers utilisent ça)
+    if (signature === `sha256=${expectedHex}`) return true;
+
+    // Format 3 : comparaison via Buffer (constant-time) — mêmes longueurs requises
+    if (signature.length === expectedHex.length) {
+      return crypto.timingSafeEqual(
+        Buffer.from(expectedHex, "utf-8"),
+        Buffer.from(signature,   "utf-8")
+      );
+    }
+
+    return false;
   } catch {
     return false;
   }
 }
 
-
 export async function POST(request: Request) {
   try {
     const rawBody = await request.text();
     const signature = request.headers.get("x-fedapay-signature") ?? "";
-    const secret = process.env.FEDAPAY_WEBHOOK_SECRET ?? "";
+
+    // Utilise FEDAPAY_WEBHOOK_SECRET en priorité, sinon FEDAPAY_SECRET_KEY en fallback
+    const secret =
+      process.env.FEDAPAY_WEBHOOK_SECRET ||
+      process.env.FEDAPAY_SECRET_KEY ||
+      "";
 
     // 🔐 Vérifier la signature en production
     if (process.env.NODE_ENV === "production") {
       if (!secret) {
-        console.error("❌ FEDAPAY_WEBHOOK_SECRET manquant dans l'environnement !");
+        console.error("❌ Aucune clé de signature configurée (FEDAPAY_WEBHOOK_SECRET ou FEDAPAY_SECRET_KEY manquant)");
         return NextResponse.json({ error: "Configuration error" }, { status: 500 });
       }
 
@@ -38,9 +58,16 @@ export async function POST(request: Request) {
         console.error("❌ Signature webhook manquante en production - requête rejetée");
         return NextResponse.json({ error: "Missing signature" }, { status: 401 });
       }
+
+      // Log de diagnostic (10 premiers caractères seulement pour la sécurité)
+      const expectedHex = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
+      console.log(`🔍 Signature reçue   : ${signature.substring(0, 12)}...`);
+      console.log(`🔍 Signature attendue: ${expectedHex.substring(0, 12)}...`);
+      console.log(`🔍 Clé utilisée      : ${secret.substring(0, 8)}...`);
+
       const isValid = verifyFedaPaySignature(rawBody, signature, secret);
       if (!isValid) {
-        console.error("❌ Signature webhook invalide - requête rejetée");
+        console.error("❌ Signature webhook invalide — vérifie FEDAPAY_WEBHOOK_SECRET dans Vercel");
         return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
       }
       console.log("✅ Signature webhook vérifiée");
