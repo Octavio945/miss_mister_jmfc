@@ -25,10 +25,15 @@ export async function POST(request: Request) {
   try {
     const rawBody = await request.text();
     const signature = request.headers.get("x-fedapay-signature") ?? "";
-    const secret = process.env.FEDAPAY_SECRET_KEY ?? "";
+    const secret = process.env.FEDAPAY_WEBHOOK_SECRET ?? "";
 
-    // 🔐 Vérifier la signature en production (toujours, même si l'header est absent)
+    // 🔐 Vérifier la signature en production
     if (process.env.NODE_ENV === "production") {
+      if (!secret) {
+        console.error("❌ FEDAPAY_WEBHOOK_SECRET manquant dans l'environnement !");
+        return NextResponse.json({ error: "Configuration error" }, { status: 500 });
+      }
+
       if (!signature) {
         console.error("❌ Signature webhook manquante en production - requête rejetée");
         return NextResponse.json({ error: "Missing signature" }, { status: 401 });
