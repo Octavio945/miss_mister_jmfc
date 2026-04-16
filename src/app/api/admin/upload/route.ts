@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 import { nanoid } from "nanoid";
+import { requireAdminAuth, unauthorizedResponse } from "@/lib/admin-auth";
 
 export async function POST(request: Request) {
+  if (!(await requireAdminAuth())) return unauthorizedResponse();
+
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File;
@@ -11,12 +14,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Aucun fichier reçu." }, { status: 400 });
     }
 
-    const filename = `${nanoid()}-${file.name.replace(/\\s/g, "_")}`;
-    
-    // Upload vers Vercel Blob
-    const blob = await put(filename, file, { 
-      access: 'public',
-    });
+    // Sécuriser le nom de fichier (pas de traversal path)
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const filename = `${nanoid()}-${safeName}`;
+
+    const blob = await put(filename, file, { access: "public" });
 
     return NextResponse.json({ success: true, imageUrl: blob.url });
   } catch (error) {

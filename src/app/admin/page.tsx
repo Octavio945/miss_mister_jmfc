@@ -13,17 +13,17 @@ export default async function AdminDashboard() {
     totalParticipants,
     totalTransactions,
     successTransactions,
-    participants,
+    totalVotesAggregate,
   ] = await Promise.all([
     prisma.participant.count({ where: { eventId: event?.id } }),
     prisma.transaction.count({ where: { eventId: event?.id } }),
     prisma.transaction.findMany({
       where: { eventId: event?.id, status: "SUCCESS" },
     }),
-    prisma.participant.findMany({
+    // Somme réelle de TOUS les votes (pas seulement top 5)
+    prisma.participant.aggregate({
       where: { eventId: event?.id },
-      orderBy: { totalVotes: "desc" },
-      take: 5,
+      _sum: { totalVotes: true },
     }),
   ])
 
@@ -38,7 +38,7 @@ export default async function AdminDashboard() {
   });
 
   const totalAmount = successTransactions.reduce((acc, tx) => acc + tx.amount, 0);
-  const totalVotes = participants.reduce((acc, p) => acc + p.totalVotes, 0);
+  const totalVotes = totalVotesAggregate._sum.totalVotes ?? 0;
 
   const renderLeaderboard = (title: string, list: any[]) => {
     return (

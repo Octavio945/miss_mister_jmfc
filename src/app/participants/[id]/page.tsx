@@ -73,6 +73,19 @@ export default async function ParticipantDetail({
                 participantId={participant.id}
               />
             </div>
+
+            {/* Description / À propos */}
+            {participant.description && participant.description.trim().length > 0 && (
+              <div className="bg-white dark:bg-[#111] rounded-3xl border border-black/5 dark:border-white/10 p-6 shadow-sm space-y-3">
+                <h2 className="text-sm font-bold tracking-[0.2em] uppercase text-accent flex items-center gap-2">
+                  <CheckCircle2 size={16} className="text-accent" />
+                  À propos
+                </h2>
+                <p className="text-foreground/70 leading-relaxed text-base whitespace-pre-line">
+                  {participant.description}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Vote Panel (client component) */}

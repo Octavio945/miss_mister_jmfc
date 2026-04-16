@@ -1,14 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { requireAdminAuth, unauthorizedResponse } from "@/lib/admin-auth";
 
 export async function GET() {
+  if (!(await requireAdminAuth())) return unauthorizedResponse();
+
   try {
     const event = await prisma.votingEvent.findFirst();
-
     if (!event) {
       return NextResponse.json({ error: "Aucun événement trouvé." }, { status: 404 });
     }
-
     return NextResponse.json({ event });
   } catch (error) {
     console.error("[GET /api/admin/settings]", error);
@@ -17,6 +18,8 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
+  if (!(await requireAdminAuth())) return unauthorizedResponse();
+
   try {
     const body = await request.json();
     const { id, isActive, votePrice, startDate, endDate } = body;
@@ -27,11 +30,11 @@ export async function PUT(request: Request) {
 
     const updatedEvent = await prisma.votingEvent.update({
       where: { id },
-      data: { 
-        isActive, 
+      data: {
+        isActive,
         votePrice,
         startDate: new Date(startDate),
-        endDate: new Date(endDate)
+        endDate: new Date(endDate),
       },
     });
 

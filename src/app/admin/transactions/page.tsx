@@ -83,12 +83,14 @@ export default async function AdminTransactions() {
                     <td className="px-6 py-4 text-center">
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest ${
-                          isSuccess
+                          tx.status === "SUCCESS"
                             ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800"
+                            : tx.status === "FAILED"
+                            ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800"
                             : "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border border-orange-200 dark:border-orange-800"
                         }`}
                       >
-                        {tx.status}
+                        {tx.status === "SUCCESS" ? "Payé" : tx.status === "FAILED" ? "Échoué" : "En attente"}
                       </span>
                     </td>
                   </tr>

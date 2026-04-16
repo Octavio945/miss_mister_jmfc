@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { sendTelegramNotification } from "@/lib/telegram";
+import { sendFedaPayPayout } from "@/lib/fedapay-payout";
 
 // ✅ Vérification de signature HMAC-SHA256 FedaPay
 function verifyFedaPaySignature(payload: string, signature: string, secret: string): boolean {
@@ -26,8 +27,12 @@ export async function POST(request: Request) {
     const signature = request.headers.get("x-fedapay-signature") ?? "";
     const secret = process.env.FEDAPAY_SECRET_KEY ?? "";
 
-    // 🔐 Vérifier la signature (skip en développement si pas de signature)
-    if (signature && process.env.NODE_ENV === "production") {
+    // 🔐 Vérifier la signature en production (toujours, même si l'header est absent)
+    if (process.env.NODE_ENV === "production") {
+      if (!signature) {
+        console.error("❌ Signature webhook manquante en production - requête rejetée");
+        return NextResponse.json({ error: "Missing signature" }, { status: 401 });
+      }
       const isValid = verifyFedaPaySignature(rawBody, signature, secret);
       if (!isValid) {
         console.error("❌ Signature webhook invalide - requête rejetée");
@@ -108,11 +113,10 @@ export async function POST(request: Request) {
       
       console.log(`✅ Transaction retrouvée par référence et mise à jour avec fedapayId ${fedapayId}`);
       // On continue avec la transaction de backup
-      // (On triche un peu pour simplifier le flux ci-dessous)
-      return processWebhook(backupTransaction, fedaPayTransaction, status);
+      return processWebhook(backupTransaction, fedaPayTransaction, status, eventName);
     }
 
-    return processWebhook(dbTransaction, fedaPayTransaction, status);
+    return processWebhook(dbTransaction, fedaPayTransaction, status, eventName);
   } catch (error) {
     console.error("💥 ERREUR WEBHOOK:", error);
     return NextResponse.json({ received: true }, { status: 200 });
@@ -120,7 +124,7 @@ export async function POST(request: Request) {
 }
 
 // ✅ Fonction isolée pour traiter le webhook après avoir trouvé la transaction
-async function processWebhook(dbTransaction: any, fedaPayTransaction: any, status: string) {
+async function processWebhook(dbTransaction: any, fedaPayTransaction: any, status: string, eventName: string = "") {
   const reference = dbTransaction.reference;
   
   try {
@@ -135,8 +139,13 @@ async function processWebhook(dbTransaction: any, fedaPayTransaction: any, statu
       return NextResponse.json({ received: true });
     }
 
-    // Mettre à jour selon le statut FedaPay
-    if (status === "approved" || status === "transferred") {
+    // Mettre à jour selon le statut FedaPay (status de l'entité OU nom de l'événement en fallback)
+    const isApproved = status === "approved" || status === "transferred"
+      || eventName === "transaction.approved" || eventName === "transaction.transferred";
+    const isFailed = status === "canceled" || status === "refused" || status === "declined"
+      || eventName === "transaction.canceled" || eventName === "transaction.declined";
+
+    if (isApproved) {
       // ✅ PAIEMENT RÉUSSI
       console.log(`✅ Paiement approuvé pour ${reference}`);
 
@@ -178,8 +187,17 @@ ${participantsList}
 <i>Les votes ont été automatiquement ajoutés.</i>
       `;
       await sendTelegramNotification(message.trim());
-      
-    } else if (status === "canceled" || status === "refused" || status === "declined") {
+
+      // 💸 Reverser automatiquement l'argent vers le numéro bénéficiaire configuré
+      const payoutResult = await sendFedaPayPayout(dbTransaction.amount, reference);
+      if (payoutResult.success) {
+        console.log(`💸 Payout déclenché avec succès (ID: ${payoutResult.payoutId}) pour ${reference}`);
+      } else {
+        // On log l'erreur mais on ne bloque pas — le paiement est déjà enregistré
+        console.error(`⚠️ Payout échoué pour ${reference}: ${payoutResult.error}`);
+      }
+
+    } else if (isFailed) {
       // ❌ PAIEMENT ÉCHOUÉ ou ANNULÉ
       console.log(`❌ Paiement ${status} pour ${reference}`);
 

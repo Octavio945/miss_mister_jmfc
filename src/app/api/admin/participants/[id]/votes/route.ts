@@ -1,11 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
+import { requireAdminAuth, unauthorizedResponse } from "@/lib/admin-auth";
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!(await requireAdminAuth())) return unauthorizedResponse();
+
   try {
     const { id } = await params;
     const { amount, reference } = await request.json();
@@ -23,15 +26,13 @@ export async function POST(
       return NextResponse.json({ error: "Candidat introuvable." }, { status: 404 });
     }
 
-    // On utilise Prisma transaction pour s'assurer que tout est écrit correctement
     await prisma.$transaction(async (tx) => {
       const voteCost = participant.event.votePrice * amount;
-      
-      // 1. Créer la transaction "CASH"
+
       const newTx = await tx.transaction.create({
         data: {
           eventId: participant.eventId,
-          amount: voteCost, // Total en cash
+          amount: voteCost,
           reference: reference || `CASH-${nanoid(8).toUpperCase()}`,
           status: "SUCCESS",
           paymentMethod: "CASH_OFFLINE",
@@ -39,7 +40,6 @@ export async function POST(
         },
       });
 
-      // 2. Lier l'item
       await tx.transactionItem.create({
         data: {
           transactionId: newTx.id,
@@ -49,12 +49,9 @@ export async function POST(
         },
       });
 
-      // 3. Incrémenter les votes du candidat
       await tx.participant.update({
         where: { id },
-        data: {
-          totalVotes: { increment: amount },
-        },
+        data: { totalVotes: { increment: amount } },
       });
     });
 

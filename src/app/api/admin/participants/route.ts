@@ -1,7 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { requireAdminAuth, unauthorizedResponse } from "@/lib/admin-auth";
 
 export async function POST(request: Request) {
+  if (!(await requireAdminAuth())) return unauthorizedResponse();
+
   try {
     const body = await request.json();
     const { name, category, number, description, imageUrl, eventId } = body;
@@ -19,7 +22,7 @@ export async function POST(request: Request) {
         category,
         number,
         description: description || "",
-        imageUrl: imageUrl || `https://api.dicebear.com/9.x/notionists/svg?seed=${name}`,
+        imageUrl: imageUrl || `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(name)}`,
         eventId,
       },
     });

@@ -50,7 +50,7 @@ export default function AdminSettings() {
       setSuccess("Paramètres enregistrés avec succès.");
       router.refresh();
     } catch {
-      setError("Les paramètres n&apos;ont pas pu être sauvegardés.");
+      setError("Les paramètres n'ont pas pu être sauvegardés.");
     } finally {
       setSaving(false);
     }
