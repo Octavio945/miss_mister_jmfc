@@ -7,4 +7,8 @@ export default defineConfig({
   datasource: {
     url: env("DATABASE_URL"),
   },
+
+  migrate: {
+    url: env("DIRECT_URL"),
+  },
 });
