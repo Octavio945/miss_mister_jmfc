@@ -2,7 +2,6 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { sendTelegramNotification } from "@/lib/telegram";
-import { sendFedaPayPayout } from "@/lib/fedapay-payout";
 
 /**
  * Tente de vérifier la signature HMAC-SHA256 FedaPay.
@@ -217,14 +216,6 @@ ${participantsList}
       `;
       await sendTelegramNotification(message.trim());
 
-      // 💸 Reverser automatiquement l'argent vers le numéro bénéficiaire configuré
-      const payoutResult = await sendFedaPayPayout(dbTransaction.amount, reference);
-      if (payoutResult.success) {
-        console.log(`💸 Payout déclenché avec succès (ID: ${payoutResult.payoutId}) pour ${reference}`);
-      } else {
-        // On log l'erreur mais on ne bloque pas — le paiement est déjà enregistré
-        console.error(`⚠️ Payout échoué pour ${reference}: ${payoutResult.error}`);
-      }
 
     } else if (isFailed) {
       // ❌ PAIEMENT ÉCHOUÉ ou ANNULÉ
