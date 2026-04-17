@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { Trophy, CreditCard, Users, TrendingUp, BarChart3 } from "lucide-react";
 import VotesBarChart from "@/components/admin/VotesBarChart";
+import ResetVotesButton from "@/components/admin/ResetVotesButton";
 
 export const dynamic = "force-dynamic";
 
@@ -98,11 +99,14 @@ export default async function AdminDashboard() {
 
   return (
     <div className="p-6 md:p-10 space-y-8">
-      <div>
-        <h1 className="text-3xl font-serif font-bold text-primary dark:text-white">Vue d&apos;ensemble</h1>
-        <p className="text-foreground/60 mt-1">
-          Statistiques en temps réel de l&apos;événement.
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-serif font-bold text-primary dark:text-white">Vue d&apos;ensemble</h1>
+          <p className="text-foreground/60 mt-1">
+            Statistiques en temps réel de l&apos;événement.
+          </p>
+        </div>
+        <ResetVotesButton />
       </div>
 
       {/* KPI Cards */}
