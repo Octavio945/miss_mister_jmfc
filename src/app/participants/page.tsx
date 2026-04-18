@@ -11,10 +11,11 @@ export default async function ParticipantsPage() {
     orderBy: { createdAt: "desc" },
   });
 
+  // Toujours récupérer par numéro — le tri par votes se fait côté client
   const participants = event
     ? await prisma.participant.findMany({
         where: { eventId: event.id },
-        orderBy: { totalVotes: "desc" },
+        orderBy: { number: "asc" },
       })
     : [];
 
