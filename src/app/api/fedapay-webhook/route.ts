@@ -3,6 +3,62 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { sendTelegramNotification } from "@/lib/telegram";
 
+/** Attendre N millisecondes (pour les retries) */
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Cherche une transaction en BDD avec retry + backoff exponentiel.
+ * Utile quand le webhook arrive avant que le checkout API ait fini de sauvegarder.
+ */
+async function findTransactionWithRetry(
+  fedapayId: string,
+  ourReference: string,
+  maxRetries = 5,
+  baseDelayMs = 1000
+) {
+  const include = {
+    items: { include: { participant: true } },
+    event: true,
+  };
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    // 1. Essai par fedapayId
+    const byId = await prisma.transaction.findUnique({
+      where: { fedapayId },
+      include,
+    });
+    if (byId) {
+      console.log(`✅ Transaction trouvée par fedapayId à la tentative ${attempt}`);
+      return byId;
+    }
+
+    // 2. Fallback par référence
+    if (ourReference) {
+      const byRef = await prisma.transaction.findUnique({
+        where: { reference: ourReference },
+        include,
+      });
+      if (byRef) {
+        console.log(`✅ Transaction trouvée par référence à la tentative ${attempt} — liaison fedapayId en cours...`);
+        // Lier le fedapayId pour les prochains webhooks
+        await prisma.transaction.update({
+          where: { id: byRef.id },
+          data: { fedapayId },
+        });
+        return byRef;
+      }
+    }
+
+    if (attempt < maxRetries) {
+      const delay = baseDelayMs * Math.pow(2, attempt - 1); // 1s, 2s, 4s, 8s...
+      console.warn(`⏳ Transaction non trouvée (tentative ${attempt}/${maxRetries}), retry dans ${delay}ms...`);
+      await sleep(delay);
+    }
+  }
+
+  return null;
+}
+
 /**
  * Tente de vérifier la signature HMAC-SHA256 FedaPay.
  * Essaie plusieurs formats (hex direct, préfixe sha256=).
@@ -99,49 +155,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid webhook - no ID" }, { status: 400 });
     }
 
-    // Chercher la transaction dans notre BDD par fedapayId
-    const dbTransaction = await prisma.transaction.findUnique({
-      where: { fedapayId: fedapayId },
-      include: {
-        items: {
-          include: {
-            participant: true,
-          },
-        },
-        event: true,
-      },
-    });
+    // ✅ RETRY avec backoff — corrige la race condition :
+    // FedaPay peut envoyer le webhook avant que notre /api/checkout ait eu le temps
+    // de sauvegarder la transaction + le fedapayId en BDD (écart observé : ~70ms).
+    // On retente jusqu'à 5 fois sur ~15 secondes avant d'abandonner.
+    const dbTransaction = await findTransactionWithRetry(fedapayId, ourReference);
 
     if (!dbTransaction) {
-      console.error(`❌ Transaction avec fedapayId ${fedapayId} non trouvée en BDD. Tentative par référence...`);
-      
-      // Fallback par référence au cas où
-      const backupTransaction = await prisma.transaction.findUnique({
-        where: { reference: ourReference },
-        include: {
-          items: {
-            include: {
-              participant: true,
-            },
-          },
-          event: true,
-        },
-      });
-
-      if (!backupTransaction) {
-        console.error(`❌ Transaction ${ourReference} non trouvée non plus.`);
-        return NextResponse.json({ received: true, warning: "Transaction not found" });
-      }
-
-      // Utiliser la transaction trouvée par référence
-      await prisma.transaction.update({
-        where: { id: backupTransaction.id },
-        data: { fedapayId: fedapayId }
-      });
-      
-      console.log(`✅ Transaction retrouvée par référence et mise à jour avec fedapayId ${fedapayId}`);
-      // On continue avec la transaction de backup
-      return processWebhook(backupTransaction, fedaPayTransaction, status, eventName);
+      console.error(`❌ Transaction fedapayId=${fedapayId} / ref=${ourReference} introuvable après plusieurs tentatives.`);
+      return NextResponse.json({ received: true, warning: "Transaction not found after retries" });
     }
 
     return processWebhook(dbTransaction, fedaPayTransaction, status, eventName);
