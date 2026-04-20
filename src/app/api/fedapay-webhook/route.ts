@@ -178,17 +178,6 @@ async function processWebhook(dbTransaction: any, fedaPayTransaction: any, statu
   const reference = dbTransaction.reference;
   
   try {
-    // Éviter les doubles traitements
-    if (dbTransaction.status === "SUCCESS") {
-      console.log(`ℹ️ Transaction ${reference} déjà traitée (SUCCESS), ignorée`);
-      return NextResponse.json({ received: true });
-    }
-
-    if (dbTransaction.status === "FAILED") {
-      console.log(`ℹ️ Transaction ${reference} déjà marquée FAILED, ignorée`);
-      return NextResponse.json({ received: true });
-    }
-
     // Mettre à jour selon le statut FedaPay (status de l'entité OU nom de l'événement en fallback)
     const isApproved = status === "approved" || status === "transferred"
       || eventName === "transaction.approved" || eventName === "transaction.transferred";
@@ -197,17 +186,23 @@ async function processWebhook(dbTransaction: any, fedaPayTransaction: any, statu
 
     if (isApproved) {
       // ✅ PAIEMENT RÉUSSI
-      console.log(`✅ Paiement approuvé pour ${reference}`);
-
-      // Mettre à jour la transaction
-      await prisma.transaction.update({
-        where: { id: dbTransaction.id },
+      // updateMany avec WHERE status=PENDING sert de verrou atomique :
+      // si deux webhooks arrivent en même temps, un seul aura count=1, l'autre count=0 → pas de double vote
+      const claimed = await prisma.transaction.updateMany({
+        where: { id: dbTransaction.id, status: "PENDING" },
         data: {
           status: "SUCCESS",
           paidAt: new Date(),
           paymentMethod: String(fedaPayTransaction.payment_method || fedaPayTransaction.payment_method_type || "MOBILE_MONEY"),
         },
       });
+
+      if (claimed.count === 0) {
+        console.log(`ℹ️ Transaction ${reference} déjà traitée par un autre webhook concurrent, ignorée`);
+        return NextResponse.json({ received: true });
+      }
+
+      console.log(`✅ Paiement approuvé pour ${reference}`);
 
       // Ajouter les votes à chaque participant concerné
       for (const item of dbTransaction.items) {
@@ -243,11 +238,9 @@ ${participantsList}
       // ❌ PAIEMENT ÉCHOUÉ ou ANNULÉ
       console.log(`❌ Paiement ${status} pour ${reference}`);
 
-      await prisma.transaction.update({
-        where: { id: dbTransaction.id },
-        data: {
-          status: "FAILED",
-        },
+      await prisma.transaction.updateMany({
+        where: { id: dbTransaction.id, status: "PENDING" },
+        data: { status: "FAILED" },
       });
     }
 

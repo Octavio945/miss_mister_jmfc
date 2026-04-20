@@ -61,7 +61,7 @@ export default function VotePanel({ participant, eventActive, votePrice }: Props
       const data = await res.json();
 
       if (!res.ok) {
-        showToast("error", data.error ?? "Une erreur est survenue.");
+        showToast("error", data.error ?? "Le service est momentanément indisponible. Veuillez réessayer.");
         return;
       }
 
@@ -80,7 +80,7 @@ export default function VotePanel({ participant, eventActive, votePrice }: Props
 
       router.push(`/checkout?${params.toString()}`);
     } catch {
-      showToast("error", "Impossible de contacter le serveur.");
+      showToast("error", "La connexion a échoué. Vérifiez votre réseau et réessayez.");
     } finally {
       setLoading(false);
     }
@@ -220,8 +220,8 @@ export default function VotePanel({ participant, eventActive, votePrice }: Props
 
             {isTooLow && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-xs text-red-600 dark:text-red-400 space-y-1">
-                <p className="font-bold underline">Montant insuffisant</p>
-                <p>FedaPay exige un minimum de 100 FCFA par transaction. Veuillez ajouter plus de votes pour continuer.</p>
+                <p className="font-bold">Montant trop faible</p>
+                <p>Le montant minimum par vote est de 100 FCFA. Ajoutez quelques votes supplémentaires pour continuer.</p>
               </div>
             )}
 

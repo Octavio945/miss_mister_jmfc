@@ -4,6 +4,33 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 
+/**
+ * Convertit les erreurs techniques FedaPay en messages lisibles pour l'utilisateur.
+ * On ne veut jamais afficher un message d'API brut à l'écran.
+ */
+function toUserFriendlyError(fedapayError: unknown): string {
+  const raw = typeof fedapayError === "string"
+    ? fedapayError.toLowerCase()
+    : JSON.stringify(fedapayError ?? "").toLowerCase();
+
+  if (raw.includes("limit") || raw.includes("quota") || raw.includes("maximum") || raw.includes("exceeded")) {
+    return "Le service de paiement est temporairement indisponible en raison d'une maintenance. Veuillez réessayer dans quelques minutes.";
+  }
+  if (raw.includes("amount") || raw.includes("montant") || raw.includes("minimum")) {
+    return "Le montant saisi n'est pas valide. Veuillez vérifier le nombre de votes et réessayer.";
+  }
+  if (raw.includes("customer") || raw.includes("email") || raw.includes("phone")) {
+    return "Vos informations de contact semblent incorrectes. Veuillez les vérifier et réessayer.";
+  }
+  if (raw.includes("unauthorized") || raw.includes("forbidden") || raw.includes("auth")) {
+    return "Le service de paiement est temporairement indisponible. Nos équipes sont informées. Réessayez dans quelques instants.";
+  }
+  if (raw.includes("timeout") || raw.includes("network") || raw.includes("connect")) {
+    return "La connexion au service de paiement a été interrompue. Vérifiez votre connexion internet et réessayez.";
+  }
+  return "Le paiement n'a pas pu être initié en raison d'une maintenance. Veuillez patienter quelques minutes et réessayer.";
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -146,11 +173,10 @@ export async function POST(request: Request) {
 
     if (!fedapayResponse.ok) {
       console.error("❌ Erreur FedaPay:", fedapayRaw);
-      // Nettoyer la transaction en BDD
       await prisma.transaction.delete({ where: { id: transaction.id } });
       return NextResponse.json(
-        { error: fedapayRaw.message || "Erreur lors de la création du paiement FedaPay" },
-        { status: 500 }
+        { error: toUserFriendlyError(fedapayRaw.message ?? fedapayRaw) },
+        { status: 503 }
       );
     }
 
@@ -185,7 +211,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("[POST /api/checkout]", error);
     return NextResponse.json(
-      { error: "Erreur serveur interne." },
+      { error: "Une erreur inattendue s'est produite. Veuillez réessayer dans quelques instants." },
       { status: 500 }
     );
   }
