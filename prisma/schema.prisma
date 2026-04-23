@@ -56,6 +56,8 @@ model Transaction {
   currency      String            @default("XOF")
   status        TxStatus          @default(PENDING)
   paymentMethod String?
+  network       String?
+  payerPhone    String?
   fedapayId     String?           @unique
   paidAt        DateTime?
   createdAt     DateTime          @default(now())

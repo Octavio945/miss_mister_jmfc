@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import TransactionActions from "@/components/admin/TransactionActions";
 
 export const dynamic = "force-dynamic";
 
@@ -38,17 +39,18 @@ export default async function AdminTransactions() {
               <tr>
                 <th className="px-6 py-4 font-medium">Référence</th>
                 <th className="px-6 py-4 font-medium">Date</th>
+                <th className="px-6 py-4 font-medium text-center">Réseau</th>
                 <th className="px-6 py-4 font-medium">Votant</th>
                 <th className="px-6 py-4 font-medium">Votes pour</th>
                 <th className="px-6 py-4 font-medium text-right">Montant</th>
                 <th className="px-6 py-4 font-medium text-center">Statut</th>
+                <th className="px-6 py-4 font-medium text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-black/5 dark:divide-white/5">
               {transactions.map((tx) => {
                 const targetParticipant = tx.items[0]?.participant;
-                const isSuccess = tx.status === "SUCCESS";
-
+                
                 return (
                   <tr key={tx.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                     <td className="px-6 py-4 font-mono font-medium text-foreground/70">
@@ -56,6 +58,15 @@ export default async function AdminTransactions() {
                     </td>
                     <td className="px-6 py-4">
                       {format(new Date(tx.createdAt), "dd MMM yyyy à HH:mm", { locale: fr })}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {tx.network === "MTN" ? (
+                        <span className="bg-yellow-400/20 text-yellow-700 dark:text-yellow-400 px-2 py-1 rounded text-[10px] font-bold">MTN</span>
+                      ) : tx.network === "CELTIS" ? (
+                        <span className="bg-blue-500/20 text-blue-700 dark:text-blue-400 px-2 py-1 rounded text-[10px] font-bold">CELTIS</span>
+                      ) : (
+                        <span className="text-foreground/30">-</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       {tx.voter ? (
@@ -93,12 +104,15 @@ export default async function AdminTransactions() {
                         {tx.status === "SUCCESS" ? "Payé" : tx.status === "FAILED" ? "Échoué" : "En attente"}
                       </span>
                     </td>
+                    <td className="px-6 py-4 text-center">
+                      <TransactionActions transactionId={tx.id} status={tx.status} />
+                    </td>
                   </tr>
                 );
               })}
               {transactions.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-foreground/60">
+                  <td colSpan={8} className="px-6 py-8 text-center text-foreground/60">
                     Aucune transaction trouvée.
                   </td>
                 </tr>
@@ -110,3 +124,4 @@ export default async function AdminTransactions() {
     </div>
   );
 }
+

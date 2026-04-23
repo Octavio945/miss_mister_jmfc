@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   Trophy,
   Lock,
@@ -12,6 +11,10 @@ import {
   CheckCircle2,
   ShieldCheck,
   Loader2,
+  Copy,
+  MessageCircle,
+  ArrowLeft,
+  Smartphone,
 } from "lucide-react";
 import type { Participant } from "@prisma/client";
 
@@ -21,15 +24,20 @@ interface Props {
   votePrice: number;
 }
 
+type PaymentStep = "form" | "instructions";
+
 export default function VotePanel({ participant, eventActive, votePrice }: Props) {
-  const router = useRouter();
   const [voteCount, setVoteCount] = useState(1);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [network, setNetwork] = useState<"MTN" | "CELTIS" | "">("");
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+  
+  const [step, setStep] = useState<PaymentStep>("form");
+  const [transaction, setTransaction] = useState<{ reference: string; amount: number; network: string } | null>(null);
 
   const total = voteCount * votePrice;
   const isTooLow = total > 0 && total < 100;
@@ -39,8 +47,17 @@ export default function VotePanel({ participant, eventActive, votePrice }: Props
     setTimeout(() => setToast(null), 5000);
   };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    showToast("success", "Copié dans le presse-papier !");
+  };
+
   const handleVote = async () => {
     if (!eventActive) return;
+    if (!network) {
+      showToast("error", "Veuillez choisir un réseau de paiement.");
+      return;
+    }
     setLoading(true);
     setToast(null);
 
@@ -55,6 +72,7 @@ export default function VotePanel({ participant, eventActive, votePrice }: Props
           voterName: name || null,
           voterPhone: phone || null,
           voterEmail: email || null,
+          network,
         }),
       });
 
@@ -65,26 +83,122 @@ export default function VotePanel({ participant, eventActive, votePrice }: Props
         return;
       }
 
-      // FIX Bug 2 : fedapayId retiré des params URL
-      // Il sera récupéré côté serveur via /api/checkout/init-popup
-      const params = new URLSearchParams({
-        ref: data.reference,
-        amount: String(data.amount),
-        eventId: participant.eventId,
-        participantId: participant.id,
-        participantName: participant.name,
-        voteCount: String(voteCount),
-        anonCode: data.anonCode ?? "",
-        // fedapayId retiré intentionnellement — sécurité
+      setTransaction({
+        reference: data.reference,
+        amount: data.amount,
+        network: data.network,
       });
-
-      router.push(`/checkout?${params.toString()}`);
+      setStep("instructions");
     } catch {
       showToast("error", "La connexion a échoué. Vérifiez votre réseau et réessayez.");
     } finally {
       setLoading(false);
     }
   };
+
+  const confirmOnWhatsApp = async () => {
+    if (!transaction) return;
+    setLoading(true);
+
+    try {
+      // 1. Notifier l'admin via Telegram
+      await fetch("/api/checkout/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reference: transaction.reference }),
+      });
+
+      // 2. Ouvrir WhatsApp
+      const whatsappNumber = "22959131586";
+      const message = `Bonjour, j'ai effectué un paiement Mobile Money pour le concours Miss & Mister JMFC.
+
+📋 Référence : ${transaction.reference}
+💰 Montant : ${transaction.amount.toLocaleString()} FCFA
+📱 Réseau : ${transaction.network === "MTN" ? "MTN Bénin" : "Celtis Bénin"}
+👤 Pour : ${participant.name}
+
+Veuillez valider mon vote. Merci !`;
+
+      const encodedMessage = encodeURIComponent(message);
+      window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, "_blank");
+    } catch (error) {
+      console.error("WhatsApp error", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (step === "instructions" && transaction) {
+    const networkNumber = transaction.network === "MTN" ? "0159131586" : "44433058";
+    const networkName = transaction.network === "MTN" ? "MTN Bénin" : "Celtis Bénin";
+
+    return (
+      <div className="bg-white dark:bg-[#111] p-6 md:p-8 lg:p-10 rounded-3xl shadow-xl border border-black/5 dark:border-white/5 sticky top-24 md:top-32 animate-in fade-in zoom-in-95 duration-300">
+        <button 
+          onClick={() => setStep("form")}
+          className="flex items-center text-sm text-foreground/50 hover:text-primary transition-colors mb-6"
+        >
+          <ArrowLeft size={16} className="mr-2" />
+          Retour
+        </button>
+
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Smartphone className="text-accent" size={32} />
+          </div>
+          <h2 className="text-2xl font-serif font-bold">Dernière étape !</h2>
+          <p className="text-foreground/60 text-sm mt-1">
+            Envoyez les fonds manuellement pour valider vos votes.
+          </p>
+        </div>
+
+        <div className="space-y-4 mb-8">
+          <div className="bg-black/5 dark:bg-white/5 rounded-2xl p-5 border border-black/5 dark:border-white/10">
+            <p className="text-xs uppercase tracking-widest text-foreground/40 font-bold mb-1">Envoyez exactement</p>
+            <p className="text-2xl font-bold text-primary dark:text-white">{transaction.amount.toLocaleString()} FCFA</p>
+            <p className="text-sm text-foreground/60 mt-1">sur le numéro {networkName} :</p>
+            <div className="flex items-center justify-between mt-2 bg-white dark:bg-black/40 rounded-xl px-4 py-3 border border-black/5 dark:border-white/10">
+              <span className="font-mono font-bold text-lg">{networkNumber}</span>
+              <button onClick={() => copyToClipboard(networkNumber)} className="text-primary hover:text-primary/80 transition-colors">
+                <Copy size={20} />
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-black/5 dark:bg-white/5 rounded-2xl p-5 border border-black/5 dark:border-white/10">
+            <p className="text-xs uppercase tracking-widest text-foreground/40 font-bold mb-1">Référence à mettre en description</p>
+            <div className="flex items-center justify-between mt-2 bg-white dark:bg-black/40 rounded-xl px-4 py-3 border border-black/5 dark:border-white/10">
+              <span className="font-mono font-bold text-primary dark:text-white">{transaction.reference}</span>
+              <button onClick={() => copyToClipboard(transaction.reference)} className="text-primary hover:text-primary/80 transition-colors">
+                <Copy size={20} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <button
+            onClick={confirmOnWhatsApp}
+            disabled={loading}
+            className="w-full h-14 rounded-full bg-green-600 text-white flex items-center justify-center space-x-2 text-lg font-medium hover:bg-green-700 transition-all hover:-translate-y-0.5 shadow-lg"
+          >
+            {loading ? <Loader2 className="animate-spin" /> : <><MessageCircle size={22} /> <span>Confirmer sur WhatsApp</span></>}
+          </button>
+          <p className="text-[10px] text-center text-foreground/40 leading-tight">
+            En cliquant, l'admin sera notifié. Envoyez ensuite votre capture d'écran sur WhatsApp pour une validation rapide.
+          </p>
+        </div>
+
+        {/* Toast */}
+        {toast && (
+          <div className="mt-4 px-4 py-3 rounded-xl text-sm font-medium flex items-center space-x-2 bg-green-50 dark:bg-green-900/30 border border-green-300 dark:border-green-700 text-green-700 dark:text-green-400 animate-in fade-in slide-in-from-bottom-2">
+            <CheckCircle2 size={16} />
+            <span>{toast.msg}</span>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white dark:bg-[#111] p-6 md:p-8 lg:p-10 rounded-3xl shadow-xl border border-black/5 dark:border-white/5 sticky top-24 md:top-32">
@@ -188,6 +302,35 @@ export default function VotePanel({ participant, eventActive, votePrice }: Props
             )}
           </div>
 
+          {/* Network Selection */}
+          <div className="mb-6 pt-4 border-t border-black/5 dark:border-white/10">
+            <p className="text-sm font-medium text-foreground/70 mb-3">Choisissez votre réseau</p>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setNetwork("MTN")}
+                className={`py-3 px-4 rounded-xl border-2 transition-all flex flex-col items-center justify-center space-y-1 ${
+                  network === "MTN"
+                    ? "border-yellow-400 bg-yellow-400/10 text-yellow-700 dark:text-yellow-400"
+                    : "border-black/5 dark:border-white/10 text-foreground/40 hover:bg-black/5"
+                }`}
+              >
+                <div className="w-8 h-8 bg-yellow-400 rounded-full mb-1 flex items-center justify-center font-bold text-black text-[10px]">MTN</div>
+                <span className="text-xs font-bold">MTN Bénin</span>
+              </button>
+              <button
+                onClick={() => setNetwork("CELTIS")}
+                className={`py-3 px-4 rounded-xl border-2 transition-all flex flex-col items-center justify-center space-y-1 ${
+                  network === "CELTIS"
+                    ? "border-blue-500 bg-blue-500/10 text-blue-700 dark:text-blue-400"
+                    : "border-black/5 dark:border-white/10 text-foreground/40 hover:bg-black/5"
+                }`}
+              >
+                <div className="w-8 h-8 bg-blue-500 rounded-full mb-1 flex items-center justify-center font-bold text-white text-[10px]">C</div>
+                <span className="text-xs font-bold">Celtis Bénin</span>
+              </button>
+            </div>
+          </div>
+
           {/* Vote counter + CTA */}
           <div className="border-t border-black/5 dark:border-white/10 pt-6 space-y-4">
             <div className="flex items-center justify-between">
@@ -236,7 +379,7 @@ export default function VotePanel({ participant, eventActive, votePrice }: Props
               ) : (
                 <>
                   <Lock size={18} />
-                  <span>Payer {total.toLocaleString()} FCFA</span>
+                  <span>Obtenir la référence</span>
                 </>
               )}
             </button>
@@ -251,7 +394,7 @@ export default function VotePanel({ participant, eventActive, votePrice }: Props
                   : "bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-400"
               }`}
             >
-              <CheckCircle2 size={16} />
+              {toast.type === "success" ? <CheckCircle2 size={16} /> : <ShieldCheck size={16} />}
               <span>{toast.msg}</span>
             </div>
           )}
@@ -259,4 +402,4 @@ export default function VotePanel({ participant, eventActive, votePrice }: Props
       )}
     </div>
   );
-}
+}
