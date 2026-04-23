@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { Trophy, CreditCard, Users, TrendingUp, BarChart3 } from "lucide-react";
 import VotesBarChart from "@/components/admin/VotesBarChart";
 import ResetVotesButton from "@/components/admin/ResetVotesButton";
+import PendingPaymentsPanel from "@/components/admin/PendingPaymentsPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -108,6 +109,9 @@ export default async function AdminDashboard() {
         </div>
         <ResetVotesButton />
       </div>
+
+      {/* Paiements en attente */}
+      <PendingPaymentsPanel />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

@@ -58,7 +58,7 @@ export default function ResetVotesButton() {
 
   return (
     <div className="flex flex-col items-end space-y-1">
-      <button
+     {/* <button
         onClick={() => setStep("confirm")}
         disabled={step === "loading"}
         className="flex items-center space-x-2 px-4 py-2 rounded-xl border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
@@ -68,8 +68,8 @@ export default function ResetVotesButton() {
         ) : (
           <Trash2 size={14} />
         )}
-        <span>Réinitialiser les votes de test</span>
-      </button>
+         <span>Réinitialiser les votes de test</span> 
+      </button>*/}
       {error && <p className="text-xs text-red-500">{error}</p>}
     </div>
   );

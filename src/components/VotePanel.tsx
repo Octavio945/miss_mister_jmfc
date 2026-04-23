@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Trophy,
   Lock,
@@ -27,6 +28,7 @@ interface Props {
 type PaymentStep = "form" | "instructions";
 
 export default function VotePanel({ participant, eventActive, votePrice }: Props) {
+  const router = useRouter();
   const [voteCount, setVoteCount] = useState(1);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [name, setName] = useState("");
@@ -108,7 +110,7 @@ export default function VotePanel({ participant, eventActive, votePrice }: Props
         body: JSON.stringify({ reference: transaction.reference }),
       });
 
-      // 2. Ouvrir WhatsApp
+      // 2. Ouvrir WhatsApp dans un nouvel onglet
       const whatsappNumber = "22959131586";
       const message = `Bonjour, j'ai effectué un paiement Mobile Money pour le concours Miss & Mister JMFC.
 
@@ -119,11 +121,21 @@ export default function VotePanel({ participant, eventActive, votePrice }: Props
 
 Veuillez valider mon vote. Merci !`;
 
-      const encodedMessage = encodeURIComponent(message);
-      window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, "_blank");
+      window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, "_blank");
+
+      // 3. Rediriger vers la page d'attente avec polling
+      const params = new URLSearchParams({
+        ref: transaction.reference,
+        amount: String(transaction.amount),
+        participantId: participant.id,
+        participantName: participant.name,
+        voteCount: String(voteCount),
+        anonCode: "",
+        network: transaction.network,
+      });
+      router.push(`/checkout?${params.toString()}`);
     } catch (error) {
       console.error("WhatsApp error", error);
-    } finally {
       setLoading(false);
     }
   };
