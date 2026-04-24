@@ -61,3 +61,41 @@ export async function POST(
     return NextResponse.json({ error: "Erreur serveur lors de l'ajout manuel des votes." }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  if (!(await requireAdminAuth())) return unauthorizedResponse();
+
+  try {
+    const { id } = await params;
+    const { amount } = await request.json();
+
+    if (!amount || typeof amount !== "number" || amount < 1) {
+      return NextResponse.json({ error: "Nombre de votes invalide." }, { status: 400 });
+    }
+
+    const participant = await prisma.participant.findUnique({ where: { id } });
+    if (!participant) {
+      return NextResponse.json({ error: "Candidat introuvable." }, { status: 404 });
+    }
+
+    if (participant.totalVotes < amount) {
+      return NextResponse.json(
+        { error: `Impossible de retirer ${amount} votes : le candidat n'en a que ${participant.totalVotes}.` },
+        { status: 400 }
+      );
+    }
+
+    await prisma.participant.update({
+      where: { id },
+      data: { totalVotes: { decrement: amount } },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("[DELETE /api/admin/participants/[id]/votes]", error);
+    return NextResponse.json({ error: "Erreur serveur lors de la correction des votes." }, { status: 500 });
+  }
+}

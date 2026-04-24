@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Settings, Save, AlertTriangle, Loader2 } from "lucide-react";
+import AdminModal from "@/components/admin/AdminModal";
 
 export default function AdminSettings() {
   const router = useRouter();
@@ -11,6 +12,7 @@ export default function AdminSettings() {
   const [resetting, setResetting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [showResetModal, setShowResetModal] = useState(false);
 
   const [eventData, setEventData] = useState<any>(null);
 
@@ -65,10 +67,7 @@ export default function AdminSettings() {
   };
 
   const handleResetDB = async () => {
-    if (!confirm("ATTENTION : Vous êtes sur le point de SUPPRIMER tous les candidats, votants et transactions de la base de données. Cette action est IRREVERSIBLE. Voulez-vous continuer ?")) {
-      return;
-    }
-
+    setShowResetModal(false);
     setResetting(true);
     setError("");
     setSuccess("");
@@ -216,7 +215,7 @@ export default function AdminSettings() {
             </p>
           </div>
           <button
-            onClick={handleResetDB}
+            onClick={() => setShowResetModal(true)}
             disabled={resetting}
             className="px-6 py-3 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 transition-all disabled:opacity-50 whitespace-nowrap shadow-md flex items-center space-x-2"
           >
@@ -226,6 +225,18 @@ export default function AdminSettings() {
         </div>
       </div>
 
+      {showResetModal && (
+        <AdminModal
+          type="danger"
+          title="Purger la base de données"
+          message="ATTENTION : cette action va SUPPRIMER définitivement tous les candidats, votants et transactions. Elle est IRRÉVERSIBLE. Êtes-vous absolument sûr de vouloir continuer ?"
+          confirmLabel="Oui, tout supprimer"
+          cancelLabel="Annuler"
+          loading={resetting}
+          onConfirm={handleResetDB}
+          onClose={() => setShowResetModal(false)}
+        />
+      )}
     </div>
   );
 }
