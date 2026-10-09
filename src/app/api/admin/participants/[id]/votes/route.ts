@@ -13,7 +13,7 @@ export async function POST(
     const { id } = await params;
     const { amount, reference } = await request.json();
 
-    if (!amount || typeof amount !== "number" || amount < 1) {
+    if (!Number.isInteger(amount) || amount < 1) {
       return NextResponse.json({ error: "Montant invalide." }, { status: 400 });
     }
 
@@ -72,7 +72,7 @@ export async function DELETE(
     const { id } = await params;
     const { amount } = await request.json();
 
-    if (!amount || typeof amount !== "number" || amount < 1) {
+    if (!Number.isInteger(amount) || amount < 1) {
       return NextResponse.json({ error: "Nombre de votes invalide." }, { status: 400 });
     }
 

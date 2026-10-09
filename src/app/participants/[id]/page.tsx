@@ -1,6 +1,6 @@
 import { TransitionLink as Link } from "@/components/TransitionLink";
 import Image from "next/image";
-import { ArrowLeft, ArrowRight, CheckCircle2, Trophy } from "lucide-react";
+import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import VotePanel from "@/components/VotePanel";

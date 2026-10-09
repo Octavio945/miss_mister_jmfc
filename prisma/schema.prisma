@@ -33,6 +33,9 @@ model Participant {
   updatedAt   DateTime          @updatedAt
   event       VotingEvent       @relation(fields: [eventId], references: [id])
   votes       TransactionItem[]
+
+  // Un seul candidat par numéro dans une catégorie d'un même événement
+  @@unique([eventId, category, number])
 }
 
 model Voter {
@@ -65,6 +68,10 @@ model Transaction {
   event         VotingEvent       @relation(fields: [eventId], references: [id])
   voter         Voter?            @relation(fields: [voterId], references: [id])
   items         TransactionItem[]
+
+  @@index([eventId, status])
+  @@index([status, createdAt])
+  @@index([voterId])
 }
 
 model TransactionItem {
@@ -75,6 +82,9 @@ model TransactionItem {
   amount        Float
   participant   Participant @relation(fields: [participantId], references: [id])
   transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([transactionId])
+  @@index([participantId])
 }
 
 enum Category {

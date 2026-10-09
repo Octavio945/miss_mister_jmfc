@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth, unauthorizedResponse } from "@/lib/admin-auth";
 import { NextResponse } from "next/server";
-import { sendTelegramNotification } from "@/lib/telegram";
+import { escapeHtml, sendTelegramNotification } from "@/lib/telegram";
 
 export async function POST(request: Request) {
   if (!(await requireAdminAuth())) {
@@ -35,14 +35,22 @@ export async function POST(request: Request) {
       );
     }
 
-    await prisma.transaction.update({
-      where: { id: transactionId },
+    // WHERE status=PENDING : empêche de rejeter une transaction validée entre-temps
+    const rejected = await prisma.transaction.updateMany({
+      where: { id: transactionId, status: "PENDING" },
       data: { status: "FAILED" },
     });
 
+    if (rejected.count === 0) {
+      return NextResponse.json(
+        { error: "Cette transaction a déjà été traitée." },
+        { status: 409 }
+      );
+    }
+
     // Notification Telegram — rejet
     const firstItem = transaction.items[0];
-    const candidatName = firstItem?.participant?.name ?? "Inconnu";
+    const candidatName = escapeHtml(firstItem?.participant?.name ?? "Inconnu");
     const nbVotes = firstItem?.numberOfVotes ?? 0;
 
     const reseauLabel =

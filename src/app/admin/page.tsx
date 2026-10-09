@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import type { Participant } from "@prisma/client";
 import { Trophy, CreditCard, Users, TrendingUp, BarChart3 } from "lucide-react";
 import VotesBarChart from "@/components/admin/VotesBarChart";
 import ResetVotesButton from "@/components/admin/ResetVotesButton";
@@ -42,7 +43,7 @@ export default async function AdminDashboard() {
   const totalAmount = successTransactions.reduce((acc, tx) => acc + tx.amount, 0);
   const totalVotes = totalVotesAggregate._sum.totalVotes ?? 0;
 
-  const renderLeaderboard = (title: string, list: any[]) => {
+  const renderLeaderboard = (title: string, list: Participant[]) => {
     return (
       <div className="bg-white dark:bg-[#111] rounded-3xl shadow-sm border border-black/5 dark:border-white/10 overflow-hidden flex-1">
         <div className="p-6 border-b border-black/5 dark:border-white/10 flex justify-between items-center">

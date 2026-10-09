@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { Search, X } from "lucide-react";
 
 const STATUSES = [
@@ -22,6 +22,7 @@ export default function TransactionFilters({ total }: { total: number }) {
   const router   = useRouter();
   const pathname = usePathname();
   const params   = useSearchParams();
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const q      = params.get("q")      ?? "";
   const status = params.get("status") ?? "ALL";
@@ -58,8 +59,8 @@ export default function TransactionFilters({ total }: { total: number }) {
             onChange={(e) => {
               const val = e.target.value;
               // Debounce léger : attend que l'utilisateur finisse de taper
-              clearTimeout((window as any).__txSearch);
-              (window as any).__txSearch = setTimeout(() => update("q", val), 400);
+              clearTimeout(searchTimer.current);
+              searchTimer.current = setTimeout(() => update("q", val), 400);
             }}
             className="w-full pl-9 pr-9 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
           />

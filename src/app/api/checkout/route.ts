@@ -2,14 +2,24 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 
+// Garde-fou contre les saisies aberrantes (ex : 1e9 votes)
+const MAX_VOTES_PER_TRANSACTION = 10000;
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { participantId, voteCount, voterName, voterPhone, voterEmail, isAnonymous, network } = body;
 
-    if (!participantId || !voteCount || typeof voteCount !== "number" || voteCount < 1) {
+    if (
+      typeof participantId !== "string" ||
+      !Number.isInteger(voteCount) ||
+      voteCount < 1 ||
+      voteCount > MAX_VOTES_PER_TRANSACTION
+    ) {
       return NextResponse.json(
-        { error: "Paramètres invalides : l'ID du candidat et un nombre de votes positif sont requis." },
+        {
+          error: `Paramètres invalides : l'ID du candidat et un nombre entier de votes (1 à ${MAX_VOTES_PER_TRANSACTION}) sont requis.`,
+        },
         { status: 400 }
       );
     }
@@ -30,8 +40,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Participant introuvable." }, { status: 404 });
     }
 
-    if (!participant.event.isActive) {
-      return NextResponse.json({ error: "L'événement de vote n'est plus actif." }, { status: 403 });
+    // Mêmes règles que l'affichage du VotePanel : actif ET dans la période de vote
+    const now = new Date();
+    if (
+      !participant.event.isActive ||
+      now < participant.event.startDate ||
+      now > participant.event.endDate
+    ) {
+      return NextResponse.json({ error: "Les votes ne sont pas ouverts actuellement." }, { status: 403 });
     }
 
     // Créer ou trouver le voter

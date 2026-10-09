@@ -5,6 +5,14 @@ import { useRouter } from "next/navigation";
 import { Settings, Save, AlertTriangle, Loader2 } from "lucide-react";
 import AdminModal from "@/components/admin/AdminModal";
 
+type EventData = {
+  id: string;
+  isActive: boolean;
+  votePrice: number;
+  startDate: string;
+  endDate: string;
+};
+
 export default function AdminSettings() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -14,7 +22,7 @@ export default function AdminSettings() {
   const [success, setSuccess] = useState("");
   const [showResetModal, setShowResetModal] = useState(false);
 
-  const [eventData, setEventData] = useState<any>(null);
+  const [eventData, setEventData] = useState<EventData | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/settings")
@@ -211,7 +219,7 @@ export default function AdminSettings() {
           <div>
             <h3 className="font-bold text-red-800 dark:text-red-400">Purger la base de données</h3>
             <p className="text-sm text-red-600/80 dark:text-red-400/80 mt-1 max-w-lg">
-              Supprime définitivement tous les candidats, toutes les transactions, et tous les votants de l'événement. Action impossible à annuler. Idéal pour nettoyer après les tests.
+              Supprime définitivement tous les candidats, toutes les transactions, et tous les votants de l&apos;événement. Action impossible à annuler. Idéal pour nettoyer après les tests.
             </p>
           </div>
           <button

@@ -1,6 +1,15 @@
 // src/lib/telegram.ts
 
 /**
+ * Échappe une valeur saisie par un utilisateur avant de l'insérer dans un message
+ * en parse_mode HTML. Sans ça, un "<" dans un nom fait rejeter le message par Telegram
+ * (l'admin n'est pas notifié) ou permet d'injecter un lien.
+ */
+export function escapeHtml(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/**
  * Envoie une notification à un canal ou utilisateur Telegram via un Bot.
  * Nécessite les variables d'environnement TELEGRAM_BOT_TOKEN et TELEGRAM_CHAT_ID.
  */

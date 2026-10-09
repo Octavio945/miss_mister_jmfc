@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAdminAuth, unauthorizedResponse } from "@/lib/admin-auth";
 import { NextResponse } from "next/server";
-import { sendTelegramNotification } from "@/lib/telegram";
+import { escapeHtml, sendTelegramNotification } from "@/lib/telegram";
 
 export async function POST(request: Request) {
   if (!(await requireAdminAuth())) {
@@ -35,12 +35,15 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validation atomique : statut + votes
-    await prisma.$transaction(async (tx) => {
-      await tx.transaction.update({
-        where: { id: transactionId },
+    // Validation atomique : statut + votes.
+    // Le WHERE status=PENDING sert de verrou : en cas de double clic ou de deux admins
+    // simultanés, une seule requête passe la transaction en SUCCESS et ajoute les votes.
+    const validated = await prisma.$transaction(async (tx) => {
+      const claimed = await tx.transaction.updateMany({
+        where: { id: transactionId, status: "PENDING" },
         data: { status: "SUCCESS", paidAt: new Date(), paymentMethod: "MOBILE_MONEY" },
       });
+      if (claimed.count === 0) return false;
 
       for (const item of transaction.items) {
         await tx.participant.update({
@@ -48,11 +51,19 @@ export async function POST(request: Request) {
           data: { totalVotes: { increment: item.numberOfVotes } },
         });
       }
+      return true;
     });
+
+    if (!validated) {
+      return NextResponse.json(
+        { error: "Cette transaction a déjà été traitée." },
+        { status: 409 }
+      );
+    }
 
     // Notification Telegram — confirmation de validation
     const firstItem = transaction.items[0];
-    const candidatName = firstItem?.participant?.name ?? "Inconnu";
+    const candidatName = escapeHtml(firstItem?.participant?.name ?? "Inconnu");
     const nbVotes = firstItem?.numberOfVotes ?? 0;
 
     const reseauLabel =
@@ -63,7 +74,7 @@ export async function POST(request: Request) {
     let votantInfo = "Anonyme";
     if (transaction.voter && !transaction.voter.isAnonymous) {
       const parts = [transaction.voter.name, transaction.voter.phone, transaction.voter.email].filter(Boolean);
-      if (parts.length > 0) votantInfo = parts.join(" / ");
+      if (parts.length > 0) votantInfo = escapeHtml(parts.join(" / "));
     } else if (transaction.voter?.isAnonymous) {
       votantInfo = `Anonyme (${transaction.voter.anonCode ?? ""})`;
     }

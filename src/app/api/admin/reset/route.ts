@@ -9,9 +9,12 @@ export async function POST() {
   }
 
   try {
-    await prisma.transaction.deleteMany();
-    await prisma.participant.deleteMany();
-    await prisma.voter.deleteMany();
+    // Tout ou rien : évite une base à moitié purgée si une étape échoue
+    await prisma.$transaction([
+      prisma.transaction.deleteMany(), // supprime aussi les TransactionItem (onDelete: Cascade)
+      prisma.participant.deleteMany(),
+      prisma.voter.deleteMany(),
+    ]);
 
     return NextResponse.json({ success: true, message: "Base de données purgée avec succès." });
   } catch (error) {

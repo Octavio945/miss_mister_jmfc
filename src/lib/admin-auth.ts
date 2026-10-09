@@ -1,44 +1,74 @@
 // src/lib/admin-auth.ts
 // Utilitaire centralisé pour l'authentification admin.
-// Le cookie admin_token stocke un HMAC-SHA256 signé avec JWT_SECRET.
-// Falsifier le cookie sans connaître JWT_SECRET est impossible.
+// Le cookie admin_token contient "<expiration>.<signature>" où la signature est
+// un HMAC-SHA256 de l'expiration, signé avec une clé dérivée de JWT_SECRET et
+// ADMIN_PASSWORD. Conséquences :
+//   - un token expire tout seul (ADMIN_SESSION_MAX_AGE) ;
+//   - changer ADMIN_PASSWORD ou JWT_SECRET invalide immédiatement toutes les sessions ;
+//   - falsifier le cookie sans connaître ces secrets est impossible.
+// Utilisé à la fois par les Route Handlers et par src/proxy.ts (runtime Node.js).
 
 import crypto from "crypto";
 
-function getSecret(): string {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    console.warn("⚠️ JWT_SECRET non défini — utilisez une valeur dans .env en production !");
-  }
-  // Fallback uniquement en développement
-  return secret ?? "dev-fallback-secret-change-in-production";
-}
+export const ADMIN_COOKIE_NAME = "admin_token";
 
-/** Génère le token attendu à partir du secret serveur. */
-export function generateAdminToken(): string {
-  return crypto
-    .createHmac("sha256", getSecret())
-    .update("admin-authenticated")
-    .digest("hex");
-}
+/** Durée de vie d'une session admin, en secondes (8 heures). */
+export const ADMIN_SESSION_MAX_AGE = 60 * 60 * 8;
 
 /**
- * Vérifie qu'un token de cookie est valide.
- * Utilise timingSafeEqual pour éviter les timing attacks.
+ * Clé de signature. Retourne null si la configuration est incomplète :
+ * dans ce cas aucun token n'est généré ni accepté (pas de secret par défaut).
  */
-export function verifyAdminToken(token: string): boolean {
-  if (!token || token.length === 0) return false;
-  try {
-    const expected = generateAdminToken();
-    // Les deux buffers doivent avoir la même taille pour timingSafeEqual
-    if (token.length !== expected.length) return false;
-    return crypto.timingSafeEqual(
-      Buffer.from(token, "utf-8"),
-      Buffer.from(expected, "utf-8")
+function getSigningKey(): string | null {
+  const secret = process.env.JWT_SECRET;
+  const password = process.env.ADMIN_PASSWORD;
+  if (!secret || secret.length < 32 || !password) {
+    console.error(
+      "❌ JWT_SECRET (32 caractères minimum) et ADMIN_PASSWORD doivent être définis — accès admin désactivé."
     );
-  } catch {
-    return false;
+    return null;
   }
+  return `${secret}:${password}`;
+}
+
+function sign(payload: string, key: string): string {
+  return crypto.createHmac("sha256", key).update(`admin-session:${payload}`).digest("hex");
+}
+
+function safeEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a, "utf-8");
+  const bufB = Buffer.from(b, "utf-8");
+  return bufA.length === bufB.length && crypto.timingSafeEqual(bufA, bufB);
+}
+
+/** Génère un nouveau token de session, ou null si la configuration est incomplète. */
+export function generateAdminToken(): string | null {
+  const key = getSigningKey();
+  if (!key) return null;
+  const expiresAt = Math.floor(Date.now() / 1000) + ADMIN_SESSION_MAX_AGE;
+  return `${expiresAt}.${sign(String(expiresAt), key)}`;
+}
+
+/** Vérifie la signature et l'expiration d'un token de cookie. */
+export function verifyAdminToken(token: string): boolean {
+  if (!token) return false;
+  const key = getSigningKey();
+  if (!key) return false;
+
+  const [expiresAtRaw, signature] = token.split(".");
+  if (!expiresAtRaw || !signature || !/^\d+$/.test(expiresAtRaw)) return false;
+  if (Number(expiresAtRaw) <= Math.floor(Date.now() / 1000)) return false;
+
+  return safeEqual(signature, sign(expiresAtRaw, key));
+}
+
+/** Compare le mot de passe saisi au mot de passe admin, en temps constant. */
+export function checkAdminPassword(input: unknown): boolean {
+  const expected = process.env.ADMIN_PASSWORD;
+  if (!expected || typeof input !== "string") return false;
+  // Comparer des hash de taille fixe évite de révéler la longueur du mot de passe
+  const hash = (v: string) => crypto.createHash("sha256").update(v).digest();
+  return crypto.timingSafeEqual(hash(input), hash(expected));
 }
 
 /**
@@ -49,7 +79,7 @@ export function verifyAdminToken(token: string): boolean {
 export async function requireAdminAuth(): Promise<boolean> {
   const { cookies } = await import("next/headers");
   const cookieStore = await cookies();
-  const token = cookieStore.get("admin_token")?.value ?? "";
+  const token = cookieStore.get(ADMIN_COOKIE_NAME)?.value ?? "";
   return verifyAdminToken(token);
 }
 

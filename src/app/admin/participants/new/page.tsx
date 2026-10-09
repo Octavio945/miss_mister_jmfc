@@ -18,16 +18,6 @@ export default function NewParticipantPage() {
     imageUrl: "",
   });
 
-  // We hardcode eventId for now, assuming there's only one active event
-  // In a real app we'd fetch the active event or pass it via props/context.
-  const [eventId, setEventId] = useState("");
-
-  // Quick fetch to get the current event id on mount
-  useState(() => {
-    fetch("/api/participants/event") // We can just make a quick endpoint or let the server handle it
-      .catch(() => {});
-  });
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -153,7 +143,7 @@ export default function NewParticipantPage() {
                     if (!res.ok) throw new Error("Erreur d'upload");
                     const { imageUrl } = await res.json();
                     setFormData({ ...formData, imageUrl });
-                  } catch (err: any) {
+                  } catch {
                     setError("Impossible de télécharger l'image.");
                   } finally {
                     setLoading(false);

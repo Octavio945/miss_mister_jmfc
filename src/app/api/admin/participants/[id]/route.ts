@@ -2,6 +2,11 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { requireAdminAuth, unauthorizedResponse } from "@/lib/admin-auth";
 
+// Prisma P2002 : violation de la contrainte unique (eventId, category, number)
+function isUniqueViolation(error: unknown): boolean {
+  return typeof error === "object" && error !== null && "code" in error && error.code === "P2002";
+}
+
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -27,6 +32,12 @@ export async function PUT(
 
     return NextResponse.json({ success: true, participant: updatedParticipant });
   } catch (error) {
+    if (isUniqueViolation(error)) {
+      return NextResponse.json(
+        { error: "Ce numéro est déjà attribué à un autre candidat de cette catégorie." },
+        { status: 409 }
+      );
+    }
     console.error("[PUT /api/admin/participants/[id]]", error);
     return NextResponse.json(
       { error: "Erreur serveur lors de la modification." },

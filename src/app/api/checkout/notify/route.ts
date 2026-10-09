@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { sendTelegramNotification } from "@/lib/telegram";
+import { escapeHtml, sendTelegramNotification } from "@/lib/telegram";
 
 export async function POST(request: Request) {
   try {
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
 
     // Infos candidat
     const firstItem = transaction.items[0];
-    const candidatName = firstItem?.participant?.name ?? "Inconnu";
+    const candidatName = escapeHtml(firstItem?.participant?.name ?? "Inconnu");
     const nbVotes = firstItem?.numberOfVotes ?? 0;
 
     // Infos votant
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
         transaction.voter.phone,
         transaction.voter.email,
       ].filter(Boolean);
-      if (parts.length > 0) votantInfo = parts.join(" / ");
+      if (parts.length > 0) votantInfo = escapeHtml(parts.join(" / "));
     } else if (transaction.voter?.isAnonymous) {
       votantInfo = `Anonyme (${transaction.voter.anonCode ?? ""})`;
     }

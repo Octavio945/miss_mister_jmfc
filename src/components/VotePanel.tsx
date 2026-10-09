@@ -197,7 +197,7 @@ Veuillez valider mon vote. Merci !`;
             {loading ? <Loader2 className="animate-spin" /> : <><MessageCircle size={22} /> <span>Confirmer sur WhatsApp</span></>}
           </button>
           <p className="text-[10px] text-center text-foreground/40 leading-tight">
-            En cliquant, l'admin sera notifié. Envoyez ensuite votre capture d'écran sur WhatsApp pour une validation rapide.
+            En cliquant, l&apos;admin sera notifié. Envoyez ensuite votre capture d&apos;écran sur WhatsApp pour une validation rapide.
           </p>
         </div>
 

@@ -1,6 +1,3 @@
-import { TransitionLink as Link } from "@/components/TransitionLink";
-import Image from "next/image";
-import { ArrowRight, Trophy } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import ParticipantsFilter from "@/components/ParticipantsFilter";
 

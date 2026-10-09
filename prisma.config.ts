@@ -5,6 +5,8 @@ export default defineConfig({
   schema: "prisma/schema.prisma",
 
   datasource: {
-    url: env("DATABASE_URL"),
+    // Les commandes Prisma (db push, migrate) passent par la connexion directe si elle existe ;
+    // le site, lui, utilise DATABASE_URL (pooler) via src/lib/prisma.ts.
+    url: process.env.DIRECT_URL ?? env("DATABASE_URL"),
   },
 });

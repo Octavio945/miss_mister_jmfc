@@ -145,7 +145,7 @@ interface MagneticButtonProps {
 }
 
 export function MagneticButton({ children, className = "", onClick }: MagneticButtonProps) {
-  const ref = useRef<HTMLButtonElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ x: 0, y: 0 });
 
   const handleMouse = (e: React.MouseEvent) => {
@@ -162,7 +162,7 @@ export function MagneticButton({ children, className = "", onClick }: MagneticBu
 
   return (
     <motion.div
-      ref={ref as any}
+      ref={ref}
       onClick={onClick}
       onMouseMove={handleMouse}
       onMouseLeave={reset}

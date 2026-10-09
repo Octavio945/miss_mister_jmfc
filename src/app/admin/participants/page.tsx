@@ -13,9 +13,18 @@ type ModalState =
   | { type: "subVotes";   id: string; name: string; currentVotes: number }
   | { type: "alert";      message: string; isError: boolean };
 
+type AdminParticipant = {
+  id: string;
+  name: string;
+  category: string;
+  number: number;
+  imageUrl: string | null;
+  totalVotes: number;
+};
+
 export default function AdminParticipants() {
   const router = useRouter();
-  const [participants, setParticipants] = useState<any[]>([]);
+  const [participants, setParticipants] = useState<AdminParticipant[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -110,9 +119,9 @@ export default function AdminParticipants() {
       showToast("success", `${voteCount} vote(s) ajouté(s) à ${modal.name}.`);
       fetchParticipants();
       router.refresh();
-    } catch (e: any) {
+    } catch (e: unknown) {
       closeModal();
-      showToast("error", e.message || "Erreur lors de l'ajout des votes.");
+      showToast("error", e instanceof Error ? e.message : "Erreur lors de l'ajout des votes.");
     } finally {
       setActionLoading(false);
     }
@@ -135,9 +144,9 @@ export default function AdminParticipants() {
       showToast("success", `${voteCount} vote(s) retiré(s) de ${modal.name}.`);
       fetchParticipants();
       router.refresh();
-    } catch (e: any) {
+    } catch (e: unknown) {
       closeModal();
-      showToast("error", e.message || "Erreur lors de la correction des votes.");
+      showToast("error", e instanceof Error ? e.message : "Erreur lors de la correction des votes.");
     } finally {
       setActionLoading(false);
     }

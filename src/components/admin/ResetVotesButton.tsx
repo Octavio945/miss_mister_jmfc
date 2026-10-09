@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function ResetVotesButton() {

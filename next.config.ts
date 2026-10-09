@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Un autre package-lock.json existe dans un dossier parent : on fixe la racine du projet
+  turbopack: { root: __dirname },
   allowedDevOrigins: [
     "trappy-catastrophically-sha.ngrok-free.dev",
     "localtunnel.me"

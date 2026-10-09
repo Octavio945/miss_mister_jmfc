@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Share2, Check, Link2 } from "lucide-react";
 
 interface ShareButtonProps {
@@ -8,14 +8,12 @@ interface ShareButtonProps {
   participantId: string;
 }
 
+const subscribeNoop = () => () => {};
+
 export default function ShareButton({ participantName, participantId }: ShareButtonProps) {
   const [copied, setCopied] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  // Éviter les erreurs d'hydratation en attendant le montage côté client
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // Éviter les erreurs d'hydratation : false côté serveur, true une fois monté côté client
+  const mounted = useSyncExternalStore(subscribeNoop, () => true, () => false);
 
   const handleShare = async () => {
     const url = `${window.location.origin}/participants/${participantId}`;

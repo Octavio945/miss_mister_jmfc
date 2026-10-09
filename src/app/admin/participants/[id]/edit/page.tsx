@@ -42,8 +42,8 @@ export default function EditParticipantPage({
             imageUrl: data.participant.imageUrl || "",
           });
         }
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Erreur serveur.");
       } finally {
         setFetching(false);
       }
@@ -74,8 +74,8 @@ export default function EditParticipantPage({
 
       router.push("/admin/participants");
       router.refresh();
-    } catch (err: any) {
-      setError(err.message || "Erreur serveur.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erreur serveur.");
     } finally {
       setLoading(false);
     }
@@ -172,7 +172,7 @@ export default function EditParticipantPage({
                         if (!res.ok) throw new Error("Erreur d'upload");
                         const { imageUrl } = await res.json();
                         setFormData({ ...formData, imageUrl });
-                      } catch (err: any) {
+                      } catch {
                         setError("Impossible de télécharger l'image.");
                       } finally {
                         setLoading(false);
