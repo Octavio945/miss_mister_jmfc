@@ -18,7 +18,7 @@ export default function ShareButton({ participantName, participantId }: ShareBut
   const handleShare = async () => {
     const url = `${window.location.origin}/participants/${participantId}`;
     const shareData = {
-      title: `${participantName} — Miss & Mister JMFC 2026`,
+      title: `${participantName} — Miss & Mister JMFC`,
       text: `Soutenez ${participantName} au concours Miss & Mister JMFC ! Votez dès maintenant 🎉`,
       url,
     };

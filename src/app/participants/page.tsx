@@ -1,12 +1,11 @@
 import { prisma } from "@/lib/prisma";
+import { getCurrentEvent, getEditionYear } from "@/lib/event";
 import ParticipantsFilter from "@/components/ParticipantsFilter";
 
 export const dynamic = "force-dynamic";
 
 export default async function ParticipantsPage() {
-  const event = await prisma.votingEvent.findFirst({
-    orderBy: { createdAt: "desc" },
-  });
+  const event = await getCurrentEvent();
 
   // Toujours récupérer par numéro — le tri par votes se fait côté client
   const participants = event
@@ -28,7 +27,7 @@ export default async function ParticipantsPage() {
             Candidats Officiels
           </h1>
           <p className="text-foreground/70 text-lg">
-            Découvrez les visages de l&apos;édition 2026. Soutenez votre
+            Découvrez les visages de l&apos;édition{event ? ` ${getEditionYear(event)}` : ""}. Soutenez votre
             candidat(e) favori(e) et contribuez au rayonnement de notre
             paroisse.
           </p>

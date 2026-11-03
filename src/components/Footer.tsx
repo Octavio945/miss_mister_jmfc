@@ -23,7 +23,7 @@ export default function Footer() {
             </h3>
           </div>
           <p className="text-white/70 max-w-sm text-sm leading-relaxed">
-            Jeunesse Missionnaire Foi et Culture Catholique du Bénin. Un concours valorisant la foi, la culture, et l&apos;élégance chrétienne pour l&apos;Édition 2026.
+            Jeunesse Missionnaire Foi et Culture Catholique du Bénin. Un concours valorisant la foi, la culture, et l&apos;élégance chrétienne.
           </p>
         </div>
 
@@ -36,6 +36,9 @@ export default function Footer() {
             </li>
             <li>
               <Link href="/participants" className="text-white/70 hover:text-accent transition-colors">Candidats &amp; Votes</Link>
+            </li>
+            <li>
+              <Link href="/historique" className="text-white/70 hover:text-accent transition-colors">Historique des éditions</Link>
             </li>
             <li>
               <Link href="/a-propos" className="text-white/70 hover:text-accent transition-colors">À Propos du Projet</Link>

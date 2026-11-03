@@ -1,22 +1,27 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { requireAdminAuth, unauthorizedResponse } from "@/lib/admin-auth";
+import { getCurrentEvent } from "@/lib/event";
 
-// Remet tous les compteurs de votes à 0 et supprime les transactions de test
-// Sans toucher aux candidats ni à l'événement
+// Remet les compteurs de votes à 0 et supprime les transactions de test
+// de l'édition EN COURS, sans toucher aux candidats ni aux éditions archivées
 export async function POST() {
   if (!(await requireAdminAuth())) return unauthorizedResponse();
 
   try {
+    const event = await getCurrentEvent();
+    if (!event) {
+      return NextResponse.json({ error: "Aucun événement trouvé." }, { status: 404 });
+    }
+
     await prisma.$transaction([
-      // Supprimer les items de transaction
-      prisma.transactionItem.deleteMany(),
-      // Supprimer les transactions
-      prisma.transaction.deleteMany(),
-      // Supprimer les voters
-      prisma.voter.deleteMany(),
-      // Remettre tous les votes à 0
+      // Supprimer les transactions (et leurs items, onDelete: Cascade)
+      prisma.transaction.deleteMany({ where: { eventId: event.id } }),
+      // Supprimer les voters qui n'ont plus aucune transaction
+      prisma.voter.deleteMany({ where: { transactions: { none: {} } } }),
+      // Remettre les votes à 0
       prisma.participant.updateMany({
+        where: { eventId: event.id },
         data: { totalVotes: 0 },
       }),
     ]);

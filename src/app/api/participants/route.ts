@@ -1,11 +1,10 @@
 import { prisma } from "@/lib/prisma";
+import { getCurrentEvent } from "@/lib/event";
 import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    const event = await prisma.votingEvent.findFirst({
-      orderBy: { createdAt: "desc" },
-    });
+    const event = await getCurrentEvent();
 
     if (!event) {
       return NextResponse.json(

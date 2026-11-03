@@ -11,23 +11,22 @@ import {
 } from "@/components/AnimatedSection";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
+import { getCurrentEvent, getEditionYear } from "@/lib/event";
 import CountdownTimer from "@/components/CountdownTimer";
+import Podium from "@/components/Podium";
 import CircularCarousel from "@/components/CircularCarousel";
 import type { CarouselCandidate } from "@/components/CircularCarousel";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const event = await prisma.votingEvent.findFirst({
-    orderBy: { createdAt: "desc" },
-  });
+  const event = await getCurrentEvent();
 
-  // On récupère tous les candidats pour le carrousel (max 10)
-  const participants: CarouselCandidate[] = event
+  // Tous les candidats, triés par votes : podiums par catégorie + carrousel (10 premiers)
+  const ranked: CarouselCandidate[] = event
     ? await prisma.participant.findMany({
         where: { eventId: event.id },
         orderBy: { totalVotes: "desc" },
-        take: 10,
         select: {
           id: true,
           name: true,
@@ -38,6 +37,14 @@ export default async function Home() {
         },
       })
     : [];
+  const participants = ranked.slice(0, 10);
+  const topMiss = ranked.filter((p) => p.category === "MISS");
+  const topMister = ranked.filter((p) => p.category === "MISTER");
+
+  // Même règle que le VotePanel et l'API de vote
+  const now = new Date();
+  const votingOpen = !!event && event.isActive && now >= event.startDate && now <= event.endDate;
+  const votingEnded = !!event && now > event.endDate;
 
   return (
     <div className="flex flex-col flex-1 items-center bg-background w-full">
@@ -69,7 +76,7 @@ export default async function Home() {
           <FadeIn delay={0.2} direction="down">
             <span className="inline-flex items-center space-x-2 py-1.5 px-4 rounded-full border border-accent/70 bg-black/40 backdrop-blur-md text-accent text-xs sm:text-sm font-bold tracking-[0.15em] uppercase mb-4 shadow-[0_0_20px_rgba(212,175,55,0.2)]">
               <Sparkles size={14} className="hidden sm:block" />
-              <span>Grande Finale · JMFC 2026</span>
+              <span>Grande Finale · JMFC{event ? ` ${getEditionYear(event)}` : ""}</span>
               <Sparkles size={14} className="hidden sm:block" />
             </span>
           </FadeIn>
@@ -85,11 +92,11 @@ export default async function Home() {
           </FadeIn>
 
           <FadeIn delay={1.6} direction="up" className="pt-8 flex justify-center">
-            <Link href="/participants">
+            <Link href={votingEnded ? "#resultats" : "/participants"}>
               <MagneticButton className="px-10 py-5 rounded-full bg-accent text-primary transition-all shadow-[0_0_30px_rgba(212,175,55,0.4)] font-bold text-lg flex items-center justify-center space-x-2 relative group overflow-hidden">
                 <div className="absolute inset-0 bg-white w-0 group-hover:w-full transition-all duration-500 ease-out z-0" />
                 <span className="relative z-10 group-hover:text-primary transition-colors duration-300">
-                  Voter maintenant
+                  {votingEnded ? "Voir les résultats" : votingOpen ? "Voter maintenant" : "Découvrir les candidats"}
                 </span>
                 <ArrowRight size={20} className="relative z-10 group-hover:translate-x-1 transition-transform group-hover:text-primary" />
               </MagneticButton>
@@ -112,13 +119,18 @@ export default async function Home() {
         <div className="max-w-4xl mx-auto px-6">
           <FadeIn delay={0.3} direction="up">
             <div className="bg-white dark:bg-[#111] border-2 border-accent/20 rounded-3xl p-8 md:p-12 shadow-2xl shadow-accent/5 flex flex-col items-center text-center hover:border-accent/50 transition-colors duration-700">
-              <h2 className="text-2xl font-serif font-bold text-primary dark:text-white mb-8">
-                {event ? "Clôture des votes dans :" : "Aucun événement actif"}
-              </h2>
               {event ? (
-                <CountdownTimer endDate={event.endDate} startDate={event.startDate} isActive={event.isActive} />
+                <CountdownTimer
+                  endDate={event.endDate}
+                  startDate={event.startDate}
+                  isActive={event.isActive}
+                  resultsHref="#resultats"
+                />
               ) : (
-                <p className="text-foreground/60">Les votes ne sont pas encore ouverts.</p>
+                <>
+                  <h2 className="text-2xl font-serif font-bold text-primary dark:text-white mb-4">Prochaine édition</h2>
+                  <p className="text-foreground/60">Les votes ne sont pas encore ouverts. Revenez bientôt !</p>
+                </>
               )}
               {event && (
                 <p className="mt-6 text-xs text-foreground/40">
@@ -132,6 +144,52 @@ export default async function Home() {
           </FadeIn>
         </div>
       </section>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          CLASSEMENT — podiums Miss et Mister
+      ═══════════════════════════════════════════════════════════════════ */}
+      {event && ranked.length > 0 && (
+        <section id="resultats" className="w-full py-20 bg-background scroll-mt-24">
+          <div className="max-w-6xl mx-auto px-6">
+            <FadeIn direction="up">
+              <div className="text-center mb-14 space-y-4">
+                <p className="text-sm font-bold tracking-[0.3em] uppercase text-accent flex justify-center items-center gap-3">
+                  <span className="w-10 h-[1px] bg-accent inline-block" />
+                  {votingEnded ? "Résultats" : "En direct"}
+                  <span className="w-10 h-[1px] bg-accent inline-block" />
+                </p>
+                <h2 className="text-4xl md:text-5xl font-serif font-bold text-primary dark:text-white">
+                  {votingEnded ? "Classement final" : "Le classement"}
+                </h2>
+                <p className="text-foreground/60 max-w-xl mx-auto">
+                  {votingEnded
+                    ? "Merci pour votre mobilisation. Voici les candidats les plus soutenus par le public."
+                    : "Les votes validés sont ajoutés au classement au fur et à mesure."}
+                </p>
+              </div>
+            </FadeIn>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-10">
+              <FadeIn direction="up" delay={0.1}>
+                <Podium title="Miss" candidates={topMiss} />
+              </FadeIn>
+              <FadeIn direction="up" delay={0.2}>
+                <Podium title="Mister" candidates={topMister} />
+              </FadeIn>
+            </div>
+
+            <div className="text-center mt-14">
+              <Link
+                href="/participants"
+                className="inline-flex items-center gap-2 font-medium text-primary dark:text-white hover:text-accent transition-colors"
+              >
+                <span>Voir le classement complet</span>
+                <ArrowRight size={18} />
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ═══════════════════════════════════════════════════════════════════
           CARROUSEL CANDIDATS — centré, animation 3D circulaire
@@ -151,7 +209,9 @@ export default async function Home() {
                 Nos Candidats
               </h3>
               <p className="text-foreground/60 text-lg max-w-xl mx-auto">
-                Découvrez les participants et votez pour votre favori avant la clôture.
+                {votingOpen
+                  ? "Découvrez les candidats et votez pour votre favori(e) avant la clôture."
+                  : "Découvrez les candidates et candidats de cette édition."}
               </p>
             </div>
           </FadeIn>
@@ -232,11 +292,11 @@ export default async function Home() {
             <div className="text-center mb-24">
               <h2 className="text-sm font-bold tracking-[0.3em] uppercase text-accent mb-3 flex justify-center items-center">
                 <span className="w-12 h-[2px] bg-accent mr-4" />
-                Expérience Utilisateur
+                Mode d&apos;emploi
                 <span className="w-12 h-[2px] bg-accent ml-4" />
               </h2>
               <h3 className="text-5xl md:text-6xl font-serif font-bold text-primary dark:text-white">
-                Comment ça marche ?
+                Voter en 3 étapes
               </h3>
             </div>
           </FadeIn>
@@ -245,18 +305,18 @@ export default async function Home() {
             {[
               {
                 num: "1",
-                title: "La Sélection",
-                desc: "Parcourez le catalogue immersif et laissez-vous séduire par l'éloquence de votre candidat favori.",
+                title: "Choisissez",
+                desc: "Parcourez les candidats et ouvrez la fiche de votre favori(e).",
               },
               {
                 num: "2",
-                title: "L'Identité",
-                desc: "Déclinez votre identité en toute transparence ou optez pour l'anonymat garanti par notre algorithme.",
+                title: "Indiquez vos votes",
+                desc: "Choisissez le nombre de votes et votre réseau, MTN ou Celtis. Vous pouvez voter de façon anonyme.",
               },
               {
                 num: "3",
-                title: "Le Vote",
-                desc: "Scellez votre vote en un clic grâce à l'intégration fluide de Mobile Money, 100% sécurisée.",
+                title: "Payez par Mobile Money",
+                desc: "Envoyez le montant indiqué avec votre référence, puis confirmez sur WhatsApp. Vos votes sont ajoutés dès la validation.",
               },
             ].map(({ num, title, desc }) => (
               <StaggerItem key={num}>
@@ -287,19 +347,25 @@ export default async function Home() {
           <FadeIn direction="up" className="space-y-8">
             <p className="text-accent text-sm font-bold tracking-[0.3em] uppercase flex justify-center items-center gap-3">
               <span className="w-8 h-[1px] bg-accent" />
-              Dernière chance
+              {votingEnded ? "Merci" : "Votes ouverts"}
               <span className="w-8 h-[1px] bg-accent" />
             </p>
             <h2 className="text-4xl md:text-5xl font-serif font-bold text-white leading-tight">
-              Chaque vote compte.<br />Faites la différence.
+              {votingEnded ? (
+                <>Merci pour votre soutien.<br />Rendez-vous à la prochaine édition.</>
+              ) : (
+                <>Chaque vote compte.<br />Faites la différence.</>
+              )}
             </h2>
             <p className="text-white/70 text-lg leading-relaxed">
-              Le résultat est entre les mains du public. Montrez votre soutien avant la clôture des votes.
+              {votingEnded
+                ? "Le concours est terminé. Retrouvez le classement final et les portraits de tous les candidats."
+                : "Le résultat est entre les mains du public. Montrez votre soutien avant la clôture des votes."}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               <Link href="/participants">
                 <MagneticButton className="px-10 py-4 rounded-full bg-accent text-primary font-bold text-lg flex items-center justify-center gap-2 hover:bg-accent/90 transition-all shadow-[0_0_30px_rgba(212,175,55,0.3)] group">
-                  <span>Voter maintenant</span>
+                  <span>{votingEnded ? "Voir les candidats" : "Voter maintenant"}</span>
                   <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                 </MagneticButton>
               </Link>

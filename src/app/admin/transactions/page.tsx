@@ -1,26 +1,35 @@
 import { prisma } from "@/lib/prisma";
+import { getCurrentEvent } from "@/lib/event";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import TransactionActions from "@/components/admin/TransactionActions";
 import TransactionFilters from "@/components/admin/TransactionFilters";
+import Pagination, { clampPage } from "@/components/admin/Pagination";
 import { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
+const PAGE_SIZE = 20;
+const STATUSES = ["PENDING", "SUCCESS", "FAILED"] as const;
+
 export default async function AdminTransactions({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string; sort?: string }>;
+  searchParams: Promise<{ q?: string; status?: string; sort?: string; page?: string }>;
 }) {
-  const { q = "", status = "ALL", sort = "date_desc" } = await searchParams;
+  const params = await searchParams;
+  const { q = "", sort = "date_desc" } = params;
+  // Un statut inconnu dans l'URL est ignoré au lieu de provoquer une erreur
+  const status = STATUSES.find((s) => s === params.status) ?? "ALL";
 
-  const event = await prisma.votingEvent.findFirst({ where: { isActive: true } });
+  // Édition en cours, même si les votes sont suspendus (isActive = false)
+  const event = await getCurrentEvent();
 
   // Construction du filtre Prisma
   const where: Prisma.TransactionWhereInput = event ? { eventId: event.id } : { id: "none" };
 
   if (status !== "ALL") {
-    where.status = status as "PENDING" | "SUCCESS" | "FAILED";
+    where.status = status;
   }
 
   if (q.trim()) {
@@ -32,20 +41,38 @@ export default async function AdminTransactions({
     ];
   }
 
-  const orderBy: Prisma.TransactionOrderByWithRelationInput =
+  const primaryOrder: Prisma.TransactionOrderByWithRelationInput =
     sort === "date_asc"    ? { createdAt: "asc" }  :
     sort === "amount_desc" ? { amount: "desc" }     :
     sort === "amount_asc"  ? { amount: "asc" }      :
                              { createdAt: "desc" };
+  // Tri secondaire stable : à montant égal, l'ordre ne change pas d'une page à l'autre
+  const orderBy = [primaryOrder, { id: "asc" as const }];
+
+  const totalCount = await prisma.transaction.count({ where });
+  const page = clampPage(Number(params.page), totalCount, PAGE_SIZE);
 
   const transactions = await prisma.transaction.findMany({
     where,
     orderBy,
+    skip: (page - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
     include: {
       voter: true,
       items: { include: { participant: true } },
     },
   });
+
+  // Conserve recherche, statut et tri en changeant de page
+  const hrefFor = (target: number) => {
+    const next = new URLSearchParams();
+    if (q) next.set("q", q);
+    if (status !== "ALL") next.set("status", status);
+    if (sort !== "date_desc") next.set("sort", sort);
+    if (target > 1) next.set("page", String(target));
+    const query = next.toString();
+    return query ? `/admin/transactions?${query}` : "/admin/transactions";
+  };
 
   return (
     <div className="p-6 md:p-10 space-y-6">
@@ -55,7 +82,7 @@ export default async function AdminTransactions({
       </div>
 
       {/* Barre de filtres */}
-      <TransactionFilters total={transactions.length} />
+      <TransactionFilters total={totalCount} />
 
       {/* Tableau */}
       <div className="bg-white dark:bg-[#111] rounded-3xl shadow-sm border border-black/5 dark:border-white/10 overflow-hidden">
@@ -116,7 +143,7 @@ export default async function AdminTransactions({
                       ) : "—"}
                     </td>
                     <td className="px-6 py-4 text-right font-bold">
-                      {tx.amount.toLocaleString()} <span className="text-foreground/40 font-normal text-xs">FCFA</span>
+                      {tx.amount.toLocaleString("fr-FR")} <span className="text-foreground/40 font-normal text-xs">FCFA</span>
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest ${
@@ -149,6 +176,7 @@ export default async function AdminTransactions({
             </tbody>
           </table>
         </div>
+        <Pagination page={page} pageSize={PAGE_SIZE} totalItems={totalCount} hrefFor={hrefFor} itemLabel="transactions" />
       </div>
     </div>
   );

@@ -18,6 +18,20 @@ model VotingEvent {
   votePrice    Int           @default(100)
   participants Participant[]
   transactions Transaction[]
+  photos       EditionPhoto[]
+}
+
+// Galerie de l'édition (soirée, défilé, remise des prix…), affichée dans l'historique public
+model EditionPhoto {
+  id        String      @id @default(uuid())
+  eventId   String
+  imageUrl  String
+  caption   String?
+  sortOrder Int         @default(0)
+  createdAt DateTime    @default(now())
+  event     VotingEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, sortOrder])
 }
 
 model Participant {

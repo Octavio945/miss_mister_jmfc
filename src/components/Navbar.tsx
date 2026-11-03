@@ -47,6 +47,9 @@ export default function Navbar() {
             <Link href="/participants" className={`text-sm font-medium hover:text-accent transition-colors ${isSolid ? 'text-foreground/80' : 'text-white/90 drop-shadow-md'}`}>
               Candidats
             </Link>
+            <Link href="/historique" className={`text-sm font-medium hover:text-accent transition-colors ${isSolid ? 'text-foreground/80' : 'text-white/90 drop-shadow-md'}`}>
+              Historique
+            </Link>
             <Link href="/a-propos" className={`text-sm font-medium hover:text-accent transition-colors ${isSolid ? 'text-foreground/80' : 'text-white/90 drop-shadow-md'}`}>
               À Propos
             </Link>
@@ -79,6 +82,9 @@ export default function Navbar() {
             </Link>
             <Link href="/participants" className="px-3 py-3 text-base font-medium rounded-lg hover:bg-black/5 dark:hover:bg-white/5 hover:text-accent" onClick={() => setIsOpen(false)}>
               Candidats
+            </Link>
+            <Link href="/historique" className="px-3 py-3 text-base font-medium rounded-lg hover:bg-black/5 dark:hover:bg-white/5 hover:text-accent" onClick={() => setIsOpen(false)}>
+              Historique
             </Link>
             <Link href="/a-propos" className="px-3 py-3 text-base font-medium rounded-lg hover:bg-black/5 dark:hover:bg-white/5 hover:text-accent" onClick={() => setIsOpen(false)}>
               À Propos

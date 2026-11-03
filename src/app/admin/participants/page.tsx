@@ -6,6 +6,9 @@ import Link from "next/link";
 import { Plus, Edit, Trash2, Loader2, X, CheckCircle2, Ticket, Search, MinusCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import AdminModal from "@/components/admin/AdminModal";
+import Pagination, { clampPage } from "@/components/admin/Pagination";
+
+const PAGE_SIZE = 10;
 
 type ModalState =
   | { type: "delete";     id: string; name: string }
@@ -38,6 +41,7 @@ export default function AdminParticipants() {
   const [search, setSearch]     = useState("");
   const [category, setCategory] = useState<"ALL" | "MISS" | "MISTER">("ALL");
   const [sort, setSort]         = useState("votes_desc");
+  const [page, setPage]         = useState(1);
 
   const showToast = (type: "error" | "success", message: string) => {
     setToast({ type, message });
@@ -83,6 +87,10 @@ export default function AdminParticipants() {
     });
     return list;
   }, [participants, search, category, sort]);
+
+  // Page courante bornée : reste valide après une suppression ou un changement de filtre
+  const currentPage = clampPage(page, filtered.length, PAGE_SIZE);
+  const pageItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const confirmDelete = async () => {
     if (modal?.type !== "delete") return;
@@ -193,18 +201,18 @@ export default function AdminParticipants() {
               type="text"
               placeholder="Rechercher un candidat…"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               className="w-full pl-9 pr-9 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
             {search && (
-              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/40 hover:text-foreground">
+              <button onClick={() => { setSearch(""); setPage(1); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/40 hover:text-foreground">
                 <X size={15} />
               </button>
             )}
           </div>
           <select
             value={sort}
-            onChange={(e) => setSort(e.target.value)}
+            onChange={(e) => { setSort(e.target.value); setPage(1); }}
             className="px-3 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
           >
             <option value="votes_desc">Votes ↓ (plus votés)</option>
@@ -219,7 +227,7 @@ export default function AdminParticipants() {
           {(["ALL", "MISS", "MISTER"] as const).map((cat) => (
             <button
               key={cat}
-              onClick={() => setCategory(cat)}
+              onClick={() => { setCategory(cat); setPage(1); }}
               className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all border ${
                 category === cat
                   ? "bg-primary text-white border-primary"
@@ -253,7 +261,7 @@ export default function AdminParticipants() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-black/5 dark:divide-white/5">
-                {filtered.map((p) => (
+                {pageItems.map((p) => (
                   <tr key={p.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-4">
@@ -282,7 +290,7 @@ export default function AdminParticipants() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right font-bold text-accent text-lg">
-                      {p.totalVotes.toLocaleString()}
+                      {p.totalVotes.toLocaleString("fr-FR")}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-1">
@@ -335,6 +343,15 @@ export default function AdminParticipants() {
               </tbody>
             </table>
           </div>
+        )}
+        {!loading && (
+          <Pagination
+            page={currentPage}
+            pageSize={PAGE_SIZE}
+            totalItems={filtered.length}
+            onPageChange={setPage}
+            itemLabel="candidats"
+          />
         )}
       </div>
 

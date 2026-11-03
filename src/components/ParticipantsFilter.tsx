@@ -5,6 +5,7 @@ import { TransitionLink as Link } from "@/components/TransitionLink";
 import Image from "next/image";
 import { ArrowRight, Trophy, Hash, SortAsc } from "lucide-react";
 import type { Participant } from "@prisma/client";
+import RankBadge from "@/components/RankBadge";
 
 type Tab    = "all" | "miss" | "mister";
 type SortBy = "number" | "votes";
@@ -14,8 +15,6 @@ interface Props {
   misses: Participant[];
   misters: Participant[];
 }
-
-const MEDAL = ["🥇", "🥈", "🥉"];
 
 export default function ParticipantsFilter({ all, misses, misters }: Props) {
   const [tab,    setTab]    = useState<Tab>("all");
@@ -102,7 +101,6 @@ export default function ParticipantsFilter({ all, misses, misters }: Props) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {list.map((candidate) => {
             const rank   = rankByVotes.get(candidate.id) ?? 0;
-            const medal  = MEDAL[rank - 1] ?? null;
             const isTop3 = rank <= 3;
 
             return (
@@ -137,16 +135,9 @@ export default function ParticipantsFilter({ all, misses, misters }: Props) {
                     <span className="text-accent">N°{String(candidate.number).padStart(2, "0")}</span>
                   </div>
 
-                  {/* Badge rang votes (toujours visible) */}
+                  {/* Médaille de rang (tri par votes) */}
                   {sortBy === "votes" && (
-                    <div className={`absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold shadow-lg ${
-                      rank === 1 ? "bg-yellow-400 text-yellow-900"
-                      : rank === 2 ? "bg-gray-300 text-gray-800"
-                      : rank === 3 ? "bg-amber-600 text-white"
-                      : "bg-black/60 text-white text-sm"
-                    }`}>
-                      {medal ?? `#${rank}`}
-                    </div>
+                    <RankBadge rank={rank} size={40} className="absolute top-3 right-3" />
                   )}
                 </div>
 
@@ -163,7 +154,7 @@ export default function ParticipantsFilter({ all, misses, misters }: Props) {
                     </span>
                     {sortBy === "number" && rank <= 3 && (
                       <span className="text-xs bg-accent/10 text-accent px-2 py-0.5 rounded-full font-bold">
-                        {medal} Top {rank}
+                        Top {rank}
                       </span>
                     )}
                   </div>

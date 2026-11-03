@@ -27,6 +27,11 @@ interface Props {
 
 type PaymentStep = "form" | "instructions";
 
+// Raccourcis de quantité ; même plafond que l'API /api/checkout
+const QUICK_COUNTS = [5, 10, 25, 50, 100];
+const MAX_VOTES = 10000;
+const clampVotes = (value: number) => Math.min(MAX_VOTES, Math.max(1, Math.floor(value) || 1));
+
 export default function VotePanel({ participant, eventActive, votePrice }: Props) {
   const router = useRouter();
   const [voteCount, setVoteCount] = useState(1);
@@ -346,31 +351,70 @@ Veuillez valider mon vote. Merci !`;
           {/* Vote counter + CTA */}
           <div className="border-t border-black/5 dark:border-white/10 pt-6 space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-foreground/70 font-medium">Nombre de votes</span>
-              <div className="flex items-center space-x-4 bg-black/5 dark:bg-white/5 rounded-full px-2 py-1">
+              <label htmlFor="vote-count" className="text-foreground/70 font-medium">Nombre de votes</label>
+              <div className="flex items-center gap-2 bg-black/5 dark:bg-white/5 rounded-full px-2 py-1">
                 <button
                   id="vote-minus"
-                  onClick={() => setVoteCount(Math.max(1, voteCount - 1))}
-                  className="w-8 h-8 rounded-full bg-white dark:bg-black/40 hover:bg-black/10 dark:hover:bg-white/10 flex items-center justify-center font-bold shadow-sm"
+                  type="button"
+                  aria-label="Retirer un vote"
+                  onClick={() => setVoteCount(clampVotes(voteCount - 1))}
+                  disabled={voteCount <= 1}
+                  className="w-8 h-8 rounded-full bg-white dark:bg-black/40 hover:bg-black/10 dark:hover:bg-white/10 flex items-center justify-center font-bold shadow-sm disabled:opacity-40"
                 >
                   −
                 </button>
-                <span className="w-8 text-center font-bold text-lg">{voteCount}</span>
+                <input
+                  id="vote-count"
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={MAX_VOTES}
+                  value={voteCount}
+                  onChange={(e) => setVoteCount(clampVotes(Number(e.target.value)))}
+                  className="w-16 bg-transparent text-center font-bold text-lg tabular-nums focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
                 <button
                   id="vote-plus"
-                  onClick={() => setVoteCount(voteCount + 1)}
-                  className="w-8 h-8 rounded-full bg-accent text-primary hover:bg-accent/90 flex items-center justify-center font-bold"
+                  type="button"
+                  aria-label="Ajouter un vote"
+                  onClick={() => setVoteCount(clampVotes(voteCount + 1))}
+                  disabled={voteCount >= MAX_VOTES}
+                  className="w-8 h-8 rounded-full bg-accent text-primary hover:bg-accent/90 flex items-center justify-center font-bold disabled:opacity-40"
                 >
                   +
                 </button>
               </div>
             </div>
 
-            <div className="flex items-center justify-between text-xl font-bold">
-              <span>Total</span>
-              <span className={`transition-colors ${isTooLow ? "text-red-500" : "text-accent"}`}>
-                {total.toLocaleString()} FCFA
-              </span>
+            {/* Raccourcis de quantité */}
+            <div className="grid grid-cols-5 gap-2" role="group" aria-label="Quantités rapides">
+              {QUICK_COUNTS.map((count) => (
+                <button
+                  key={count}
+                  type="button"
+                  onClick={() => setVoteCount(count)}
+                  aria-pressed={voteCount === count}
+                  className={`py-2 rounded-xl text-sm font-bold border transition-all ${
+                    voteCount === count
+                      ? "bg-primary text-white border-primary shadow-md"
+                      : "border-black/10 dark:border-white/10 text-foreground/70 hover:border-accent hover:text-accent"
+                  }`}
+                >
+                  {count}
+                </button>
+              ))}
+            </div>
+
+            <div className="rounded-2xl bg-black/5 dark:bg-white/5 px-4 py-3">
+              <div className="flex items-center justify-between text-xl font-bold">
+                <span>Total</span>
+                <span className={`tabular-nums transition-colors ${isTooLow ? "text-red-500" : "text-accent"}`}>
+                  {total.toLocaleString("fr-FR")} FCFA
+                </span>
+              </div>
+              <p className="text-xs text-foreground/50 mt-0.5 text-right tabular-nums">
+                {voteCount.toLocaleString("fr-FR")} vote{voteCount > 1 ? "s" : ""} × {votePrice.toLocaleString("fr-FR")} FCFA
+              </p>
             </div>
 
             {isTooLow && (

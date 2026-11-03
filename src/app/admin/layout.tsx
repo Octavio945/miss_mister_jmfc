@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Users, CreditCard, LogOut, ChevronLeft, X, Settings, Menu } from "lucide-react";
+import NotificationBell from "@/components/admin/NotificationBell";
+import { LayoutDashboard, Users, CreditCard, LogOut, ChevronLeft, X, Settings, Menu, History } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -22,6 +23,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin", icon: LayoutDashboard, label: "Vue d'ensemble" },
     { href: "/admin/participants", icon: Users, label: "Candidats" },
     { href: "/admin/transactions", icon: CreditCard, label: "Transactions" },
+    { href: "/admin/editions", icon: History, label: "Éditions" },
     { href: "/admin/settings", icon: Settings, label: "Paramètres" },
   ];
 
@@ -35,16 +37,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen bg-black/5 dark:bg-[#0a0a0a] flex flex-col md:flex-row">
       
-      {/* Mobile Top Navbar */}
-      <div className="md:hidden bg-white dark:bg-[#111] border-b border-black/10 dark:border-white/10 sticky top-0 z-30 px-6 py-4 flex items-center justify-between shadow-sm">
-        <div className="flex flex-col">
-          <div className="font-serif font-bold text-xl text-primary dark:text-white">Admin Panel</div>
-        </div>
-        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 -mr-2 text-foreground/70 hover:text-primary transition-colors">
-          {isMobileMenuOpen ? <X size={26} /> : <Menu size={26} />}
-        </button>
-      </div>
-
       {/* Overlay mobile */}
       {isMobileMenuOpen && (
         <div 
@@ -64,7 +56,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <h2 className="text-2xl font-serif font-bold text-primary dark:text-white">
               Admin Panel
             </h2>
-            <p className="text-xs text-foreground/50 mt-1 uppercase tracking-widest">JMFC 2026</p>
+            <p className="text-xs text-foreground/50 mt-1 uppercase tracking-widest">JMFC</p>
           </div>
         </div>
 
@@ -105,6 +97,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Main Content */}
       <main className="flex-1 overflow-x-hidden w-full max-w-full">
+        {/* Barre du haut : titre + menu sur mobile, cloche de notifications partout */}
+        <div className="sticky top-0 z-30 bg-white dark:bg-[#111] border-b border-black/10 dark:border-white/10 px-4 md:px-10 py-3 flex items-center justify-between gap-4">
+          <div className="font-serif font-bold text-xl text-primary dark:text-white md:hidden">Admin Panel</div>
+          <div className="hidden md:block" />
+          <div className="flex items-center gap-1">
+            <NotificationBell />
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label={isMobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+              className="md:hidden p-2 text-foreground/70 hover:text-primary transition-colors"
+            >
+              {isMobileMenuOpen ? <X size={26} /> : <Menu size={26} />}
+            </button>
+          </div>
+        </div>
         {children}
       </main>
 

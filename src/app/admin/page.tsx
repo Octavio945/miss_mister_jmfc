@@ -1,56 +1,80 @@
 import { prisma } from "@/lib/prisma";
+import { getCurrentEvent } from "@/lib/event";
 import type { Participant } from "@prisma/client";
 import { Trophy, CreditCard, Users, TrendingUp, BarChart3 } from "lucide-react";
 import VotesBarChart from "@/components/admin/VotesBarChart";
 import ResetVotesButton from "@/components/admin/ResetVotesButton";
-import PendingPaymentsPanel from "@/components/admin/PendingPaymentsPanel";
+import Pagination, { clampPage } from "@/components/admin/Pagination";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminDashboard() {
-  const event = await prisma.votingEvent.findFirst({
-    where: { isActive: true },
-  });
+const LEADERBOARD_PAGE_SIZE = 10;
+
+export default async function AdminDashboard({
+  searchParams,
+}: {
+  searchParams: Promise<{ miss?: string; mister?: string }>;
+}) {
+  const params = await searchParams;
+  // Édition en cours, même si les votes sont suspendus (isActive = false)
+  const event = await getCurrentEvent();
+  // Sans événement, "none" ne correspond à aucun id : les statistiques restent à zéro
+  const eventId = event?.id ?? "none";
 
   const [
     totalParticipants,
     totalTransactions,
-    successTransactions,
+    successAggregate,
     totalVotesAggregate,
   ] = await Promise.all([
-    prisma.participant.count({ where: { eventId: event?.id } }),
-    prisma.transaction.count({ where: { eventId: event?.id } }),
-    prisma.transaction.findMany({
-      where: { eventId: event?.id, status: "SUCCESS" },
+    prisma.participant.count({ where: { eventId } }),
+    prisma.transaction.count({ where: { eventId } }),
+    prisma.transaction.aggregate({
+      where: { eventId, status: "SUCCESS" },
+      _sum: { amount: true },
+      _count: { _all: true },
     }),
     // Somme réelle de TOUS les votes (pas seulement top 5)
     prisma.participant.aggregate({
-      where: { eventId: event?.id },
+      where: { eventId },
       _sum: { totalVotes: true },
     }),
   ])
 
   const missCandidates = await prisma.participant.findMany({
-    where: { eventId: event?.id, category: "MISS" },
+    where: { eventId, category: "MISS" },
     orderBy: { totalVotes: "desc" },
   });
 
   const misterCandidates = await prisma.participant.findMany({
-    where: { eventId: event?.id, category: "MISTER" },
+    where: { eventId, category: "MISTER" },
     orderBy: { totalVotes: "desc" },
   });
 
-  const totalAmount = successTransactions.reduce((acc, tx) => acc + tx.amount, 0);
+  const totalAmount = successAggregate._sum.amount ?? 0;
+  const successCount = successAggregate._count._all;
   const totalVotes = totalVotesAggregate._sum.totalVotes ?? 0;
 
-  const renderLeaderboard = (title: string, list: Participant[]) => {
+  const leaderboardHref = (key: "miss" | "mister", target: number) => {
+    const next = new URLSearchParams();
+    if (params.miss && key !== "miss") next.set("miss", params.miss);
+    if (params.mister && key !== "mister") next.set("mister", params.mister);
+    if (target > 1) next.set(key, String(target));
+    const query = next.toString();
+    return query ? `/admin?${query}` : "/admin";
+  };
+
+  const renderLeaderboard = (title: string, list: Participant[], key: "miss" | "mister") => {
+    const page = clampPage(Number(params[key]), list.length, LEADERBOARD_PAGE_SIZE);
+    const offset = (page - 1) * LEADERBOARD_PAGE_SIZE;
+    const pageItems = list.slice(offset, offset + LEADERBOARD_PAGE_SIZE);
     return (
-      <div className="bg-white dark:bg-[#111] rounded-3xl shadow-sm border border-black/5 dark:border-white/10 overflow-hidden flex-1">
+      <div className="bg-white dark:bg-[#111] rounded-3xl shadow-sm border border-black/5 dark:border-white/10 overflow-hidden flex-1 flex flex-col">
         <div className="p-6 border-b border-black/5 dark:border-white/10 flex justify-between items-center">
           <h2 className="text-xl font-bold font-serif">{title}</h2>
           <Trophy size={20} className="text-accent" />
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto flex-1">
           <table className="w-full text-left">
             <thead className="bg-black/5 dark:bg-white/5 text-sm uppercase tracking-wider text-foreground/60">
               <tr>
@@ -61,29 +85,33 @@ export default async function AdminDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-black/5 dark:divide-white/5">
-              {list.length > 0 ? list.map((p, index) => {
+              {pageItems.length > 0 ? pageItems.map((p, i) => {
+                // Rang et avance calculés sur la liste complète, pas seulement sur la page
+                const index = offset + i;
                 const isFirst = index === 0;
-                // Calculate lead over next person (if any)
                 const leadVotes = index < list.length - 1 ? (p.totalVotes - list[index + 1].totalVotes) : 0;
-                
+
                 return (
                   <tr key={p.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                     <td className="px-6 py-4">
-                      <span className={`font-mono font-bold w-8 h-8 rounded-full flex items-center justify-center ${isFirst ? 'bg-accent text-white shadow-md' : 'bg-primary/10 text-primary'}`}>
+                      <span className={`font-mono font-bold w-8 h-8 rounded-full flex items-center justify-center ${isFirst ? 'bg-accent text-white shadow-md' : 'bg-primary/10 text-primary dark:bg-white/10 dark:text-white'}`}>
                         #{index + 1}
                       </span>
                     </td>
-                    <td className="px-6 py-4 font-bold flex items-center gap-3">
-                      <span>{p.name}</span>
-                      <span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded text-[10px] font-semibold uppercase shrink-0">
-                        N°{p.number}
-                      </span>
+                    <td className="px-6 py-4 font-bold">
+                      {/* flex sur un div : un <td> en flex casse l'alignement du tableau */}
+                      <div className="flex items-center gap-3">
+                        <span>{p.name}</span>
+                        <span className="bg-black/5 dark:bg-white/10 px-2 py-1 rounded text-[10px] font-semibold uppercase shrink-0">
+                          N°{p.number}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-right font-bold text-primary dark:text-white">
-                      {p.totalVotes.toLocaleString()}
+                      {p.totalVotes.toLocaleString("fr-FR")}
                     </td>
                     <td className="px-6 py-4 text-right font-bold text-green-600 dark:text-green-400 text-sm">
-                      {leadVotes > 0 ? `+${leadVotes.toLocaleString()}` : "-"}
+                      {leadVotes > 0 ? `+${leadVotes.toLocaleString("fr-FR")}` : "-"}
                     </td>
                   </tr>
                 );
@@ -95,6 +123,13 @@ export default async function AdminDashboard() {
             </tbody>
           </table>
         </div>
+        <Pagination
+          page={page}
+          pageSize={LEADERBOARD_PAGE_SIZE}
+          totalItems={list.length}
+          hrefFor={(target) => leaderboardHref(key, target)}
+          itemLabel="candidats"
+        />
       </div>
     );
   };
@@ -111,9 +146,6 @@ export default async function AdminDashboard() {
         <ResetVotesButton />
       </div>
 
-      {/* Paiements en attente */}
-      <PendingPaymentsPanel />
-
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white dark:bg-[#111] p-6 rounded-3xl shadow-sm border border-black/5 dark:border-white/10">
@@ -122,7 +154,7 @@ export default async function AdminDashboard() {
             <h3 className="font-medium">Montant Récolté</h3>
           </div>
           <p className="text-3xl font-bold font-serif text-primary dark:text-white">
-            {totalAmount.toLocaleString()} <span className="text-xl">FCFA</span>
+            {totalAmount.toLocaleString("fr-FR")} <span className="text-xl">FCFA</span>
           </p>
         </div>
 
@@ -132,7 +164,7 @@ export default async function AdminDashboard() {
             <h3 className="font-medium">Total Votes</h3>
           </div>
           <p className="text-3xl font-bold font-serif text-primary dark:text-white">
-            {totalVotes.toLocaleString()}
+            {totalVotes.toLocaleString("fr-FR")}
           </p>
         </div>
 
@@ -152,7 +184,7 @@ export default async function AdminDashboard() {
             <h3 className="font-medium">Transactions Payées</h3>
           </div>
           <p className="text-3xl font-bold font-serif text-primary dark:text-white">
-            {successTransactions.length} <span className="text-xl text-foreground/50 font-normal">/ {totalTransactions}</span>
+            {successCount} <span className="text-xl text-foreground/50 font-normal">/ {totalTransactions}</span>
           </p>
         </div>
       </div>
@@ -160,8 +192,8 @@ export default async function AdminDashboard() {
       {/* Leaderboards */}
       <h2 className="text-2xl font-serif font-bold pt-4 text-primary dark:text-white">Classements Officiels</h2>
       <div className="flex flex-col lg:flex-row gap-6">
-        {renderLeaderboard("Classement MISS", missCandidates)}
-        {renderLeaderboard("Classement MISTER", misterCandidates)}
+        {renderLeaderboard("Classement MISS", missCandidates, "miss")}
+        {renderLeaderboard("Classement MISTER", misterCandidates, "mister")}
       </div>
 
       {/* Graphs */}

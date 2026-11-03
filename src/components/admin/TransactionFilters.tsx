@@ -31,6 +31,8 @@ export default function TransactionFilters({ total }: { total: number }) {
   const update = useCallback(
     (key: string, value: string) => {
       const next = new URLSearchParams(params.toString());
+      // Nouveau filtre = nouvelle liste : on repart de la première page
+      next.delete("page");
       if (value === "" || value === "ALL" || value === "date_desc") {
         next.delete(key);
       } else {

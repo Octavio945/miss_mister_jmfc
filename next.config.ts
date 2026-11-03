@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
     "localtunnel.me"
   ] as string[],
   images: {
-    unoptimized: true,
+    // Optimisation active : photos redimensionnées et converties (WebP/AVIF) selon l'écran
     remotePatterns: [
       {
         protocol: 'https',
