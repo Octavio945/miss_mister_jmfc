@@ -5,6 +5,9 @@
   --foreground: #020617;
   --primary: #0F172A;
   --accent: #D4AF37;
+  --accent-light: #F0D060;
+  --accent-dark: #A8861C;
+  --gold-gradient: linear-gradient(135deg, #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C);
 }
 
 @theme inline {
@@ -21,9 +24,14 @@
     --background: #020617;
     --foreground: #f8fafc;
     --primary: #1E293B;
-    /* Même or que le mode clair, un peu plus lumineux pour le contraste sur fond sombre */
     --accent: #E2BE52;
+    --accent-light: #F5D66A;
+    --accent-dark: #B8942A;
   }
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
@@ -32,7 +40,22 @@ body {
   font-family: var(--font-sans), sans-serif;
 }
 
-/* Reflet doré qui traverse la carte du 1er (podium) */
+/* ── Gold shimmer text ── */
+.gold-text {
+  background: var(--gold-gradient);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer-text 6s ease-in-out infinite;
+}
+
+@keyframes shimmer-text {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* ── Podium shine ── */
 .podium-shine::after {
   content: "";
   position: absolute;
@@ -48,6 +71,108 @@ body {
   85%, 100% { transform: translateX(120%); }
 }
 
+/* ── Glow pulse ── */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(212, 175, 55, 0.2); }
+  50% { box-shadow: 0 0 40px rgba(212, 175, 55, 0.5), 0 0 80px rgba(212, 175, 55, 0.15); }
+}
+
+.glow-pulse {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+/* ── Float animation ── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+}
+
+.float {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* ── Decorative ornament ── */
+.ornament-line {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  justify-content: center;
+}
+
+.ornament-line::before,
+.ornament-line::after {
+  content: "";
+  flex: 1;
+  max-width: 80px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+}
+
+/* ── Luxury card ── */
+.luxury-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.luxury-card:hover {
+  background: rgba(212, 175, 55, 0.05);
+  border-color: rgba(212, 175, 55, 0.4);
+  box-shadow: 0 0 30px rgba(212, 175, 55, 0.1), 0 20px 60px rgba(0, 0, 0, 0.2);
+  transform: translateY(-4px);
+}
+
+/* ── Star particle ── */
+@keyframes twinkle {
+  0%, 100% { opacity: 0; transform: scale(0.5); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+.star-particle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: twinkle var(--duration, 3s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+/* ── Gradient border animation ── */
+@keyframes border-glow {
+  0%, 100% { border-color: rgba(212, 175, 55, 0.2); }
+  50% { border-color: rgba(212, 175, 55, 0.6); }
+}
+
+.border-animate {
+  animation: border-glow 3s ease-in-out infinite;
+}
+
+/* ── Badge shine ── */
+@keyframes badge-shine {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.badge-luxury {
+  background: linear-gradient(90deg, 
+    rgba(212,175,55,0.15) 0%, 
+    rgba(212,175,55,0.3) 25%,
+    rgba(255,236,170,0.4) 50%,
+    rgba(212,175,55,0.3) 75%,
+    rgba(212,175,55,0.15) 100%
+  );
+  background-size: 200% auto;
+  animation: badge-shine 4s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .podium-shine::after { animation: none; display: none; }
+  .gold-text { animation: none; background-position: 0% 50%; }
+  .glow-pulse { animation: none; }
+  .float { animation: none; }
+  .star-particle { animation: none; }
+  .badge-luxury { animation: none; }
 }

@@ -1,14 +1,19 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
+import { createFedapayTransaction, FedapayError } from "@/lib/fedapay";
 
 // Garde-fou contre les saisies aberrantes (ex : 1e9 votes)
 const MAX_VOTES_PER_TRANSACTION = 10000;
 
+// Les erreurs techniques de FedaPay ne sont jamais montrées telles quelles au votant
+const PAYMENT_UNAVAILABLE =
+  "Le service de paiement est momentanément indisponible. Veuillez réessayer dans quelques minutes.";
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { participantId, voteCount, voterName, voterPhone, voterEmail, isAnonymous, network } = body;
+    const { participantId, voteCount, voterName, voterPhone, voterEmail, isAnonymous } = body;
 
     if (
       typeof participantId !== "string" ||
@@ -20,13 +25,6 @@ export async function POST(request: Request) {
         {
           error: `Paramètres invalides : l'ID du candidat et un nombre entier de votes (1 à ${MAX_VOTES_PER_TRANSACTION}) sont requis.`,
         },
-        { status: 400 }
-      );
-    }
-
-    if (!network || !["MTN", "CELTIS"].includes(network)) {
-      return NextResponse.json(
-        { error: "Veuillez choisir un réseau de paiement (MTN ou Celtis)." },
         { status: 400 }
       );
     }
@@ -105,7 +103,6 @@ export async function POST(request: Request) {
         amount,
         currency: "XOF",
         status: "PENDING",
-        network,
         items: {
           create: {
             participantId: participant.id,
@@ -116,15 +113,38 @@ export async function POST(request: Request) {
       },
     });
 
+    // Session de paiement FedaPay. En cas d'échec, la transaction locale est supprimée :
+    // aucun votant ne reste bloqué sur une transaction impossible à payer.
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
+    try {
+      const fedapayTransaction = await createFedapayTransaction({
+        amount,
+        description: `${voteCount} vote(s) pour ${participant.name.trim()}`,
+        reference,
+        // Redirection éventuelle après paiement : la page d'attente vérifie le statut
+        callbackUrl: `${baseUrl}/checkout?ref=${reference}`,
+        customer: { firstname: voter.name || "Votant", email: voter.email },
+      });
+      await prisma.transaction.update({
+        where: { id: transaction.id },
+        data: { fedapayId: String(fedapayTransaction.id) },
+      });
+    } catch (error) {
+      console.error("❌ Création FedaPay impossible:", error instanceof FedapayError ? error.details ?? error.message : error);
+      await prisma.transaction.delete({ where: { id: transaction.id } });
+      return NextResponse.json({ error: PAYMENT_UNAVAILABLE }, { status: 503 });
+    }
+
+    // L'identifiant FedaPay n'est pas renvoyé ici : la page de paiement le demande à /api/checkout/init-popup
     return NextResponse.json({
       success: true,
-      transactionId: transaction.id,
       reference: transaction.reference,
       amount: transaction.amount,
       currency: transaction.currency,
-      voterId: voter.id,
-      anonCode: anonCode,
-      network,
+      anonCode,
     });
   } catch (error) {
     console.error("[POST /api/checkout]", error);

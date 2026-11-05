@@ -423,7 +423,7 @@ export default function AdminSettings() {
             `« ${newEdition.title.trim()} » deviendra le concours affiché sur le site, sans candidat ni vote.` +
             (eventData ? ` « ${eventData.title} » sera archivée et ses votes définitivement fermés.` : "") +
             (pendingCount > 0
-              ? ` Attention : ${pendingCount} paiement(s) de l'édition actuelle sont encore en attente de validation.`
+              ? ` Attention : ${pendingCount} paiement(s) de l'édition actuelle ne sont pas finalisés (le votant n'a pas terminé le paiement FedaPay).`
               : "")
           }
           confirmLabel="Créer l'édition"

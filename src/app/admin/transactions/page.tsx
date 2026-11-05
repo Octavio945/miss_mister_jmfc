@@ -2,7 +2,6 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentEvent } from "@/lib/event";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import TransactionActions from "@/components/admin/TransactionActions";
 import TransactionFilters from "@/components/admin/TransactionFilters";
 import Pagination, { clampPage } from "@/components/admin/Pagination";
 import { Prisma } from "@prisma/client";
@@ -11,6 +10,16 @@ export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 20;
 const STATUSES = ["PENDING", "SUCCESS", "FAILED"] as const;
+
+// Moyen de paiement renvoyé par FedaPay (mtn_open, moov, celtiis_bj…) ou réseau des anciens paiements manuels
+function paymentLabel(method: string | null, network: string | null): { label: string; cls: string } | null {
+  const value = (method ?? network ?? "").toLowerCase();
+  if (!value) return null;
+  if (value.includes("mtn")) return { label: "MTN", cls: "bg-yellow-400/20 text-yellow-700 dark:text-yellow-400" };
+  if (value.includes("moov")) return { label: "Moov", cls: "bg-sky-500/20 text-sky-700 dark:text-sky-400" };
+  if (value.includes("celti")) return { label: "Celtiis", cls: "bg-blue-500/20 text-blue-700 dark:text-blue-400" };
+  return { label: value.replace(/_/g, " ").toUpperCase(), cls: "bg-black/10 dark:bg-white/10 text-foreground/70" };
+}
 
 export default async function AdminTransactions({
   searchParams,
@@ -78,7 +87,9 @@ export default async function AdminTransactions({
     <div className="p-6 md:p-10 space-y-6">
       <div>
         <h1 className="text-3xl font-serif font-bold text-primary dark:text-white">Transactions</h1>
-        <p className="text-foreground/60 mt-1">Historique de tous les paiements.</p>
+        <p className="text-foreground/60 mt-1">
+          Historique de tous les paiements. Les votes sont ajoutés automatiquement dès que FedaPay confirme le paiement.
+        </p>
       </div>
 
       {/* Barre de filtres */}
@@ -92,17 +103,17 @@ export default async function AdminTransactions({
               <tr>
                 <th className="px-6 py-4 font-medium">Référence</th>
                 <th className="px-6 py-4 font-medium">Date</th>
-                <th className="px-6 py-4 font-medium text-center">Réseau</th>
+                <th className="px-6 py-4 font-medium text-center">Moyen</th>
                 <th className="px-6 py-4 font-medium">Votant</th>
                 <th className="px-6 py-4 font-medium">Votes pour</th>
                 <th className="px-6 py-4 font-medium text-right">Montant</th>
                 <th className="px-6 py-4 font-medium text-center">Statut</th>
-                <th className="px-6 py-4 font-medium text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-black/5 dark:divide-white/5">
               {transactions.map((tx) => {
                 const targetParticipant = tx.items[0]?.participant;
+                const method = paymentLabel(tx.paymentMethod, tx.network);
 
                 return (
                   <tr key={tx.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
@@ -113,10 +124,8 @@ export default async function AdminTransactions({
                       {format(new Date(tx.createdAt), "dd MMM yyyy à HH:mm", { locale: fr })}
                     </td>
                     <td className="px-6 py-4 text-center">
-                      {tx.network === "MTN" ? (
-                        <span className="bg-yellow-400/20 text-yellow-700 dark:text-yellow-400 px-2 py-1 rounded text-[10px] font-bold">MTN</span>
-                      ) : tx.network === "CELTIS" ? (
-                        <span className="bg-blue-500/20 text-blue-700 dark:text-blue-400 px-2 py-1 rounded text-[10px] font-bold">CELTIS</span>
+                      {method ? (
+                        <span className={`px-2 py-1 rounded text-[10px] font-bold ${method.cls}`}>{method.label}</span>
                       ) : (
                         <span className="text-foreground/30 text-xs">—</span>
                       )}
@@ -153,11 +162,8 @@ export default async function AdminTransactions({
                           ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800"
                           : "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border border-orange-200 dark:border-orange-800"
                       }`}>
-                        {tx.status === "SUCCESS" ? "Payé" : tx.status === "FAILED" ? "Échoué" : "En attente"}
+                        {tx.status === "SUCCESS" ? "Payé" : tx.status === "FAILED" ? "Échoué" : "Non finalisé"}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <TransactionActions transactionId={tx.id} status={tx.status} />
                     </td>
                   </tr>
                 );
@@ -165,7 +171,7 @@ export default async function AdminTransactions({
 
               {transactions.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-foreground/40">
+                  <td colSpan={7} className="px-6 py-12 text-center text-foreground/40">
                     <p className="font-medium">Aucune transaction trouvée.</p>
                     {(q || status !== "ALL") && (
                       <p className="text-xs mt-1">Essayez de modifier vos filtres.</p>

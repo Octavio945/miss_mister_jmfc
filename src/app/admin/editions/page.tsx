@@ -137,7 +137,7 @@ export default async function AdminEditions() {
                 { label: "Montant récolté", value: `${(success?._sum.amount ?? 0).toLocaleString("fr-FR")} FCFA` },
                 { label: "Total votes", value: totalVotes.toLocaleString("fr-FR") },
                 { label: "Paiements validés", value: String(success?._count._all ?? 0) },
-                { label: "Paiements en attente", value: String(pending?._count._all ?? 0) },
+                { label: "Paiements non finalisés", value: String(pending?._count._all ?? 0) },
               ].map((stat) => (
                 <div key={stat.label} className="p-4 rounded-2xl bg-black/5 dark:bg-white/5">
                   <p className="text-xs uppercase tracking-wider text-foreground/60">{stat.label}</p>

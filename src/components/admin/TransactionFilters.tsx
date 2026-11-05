@@ -6,7 +6,7 @@ import { Search, X } from "lucide-react";
 
 const STATUSES = [
   { value: "ALL",     label: "Tous" },
-  { value: "PENDING", label: "En attente" },
+  { value: "PENDING", label: "Non finalisé" },
   { value: "SUCCESS", label: "Payé" },
   { value: "FAILED",  label: "Échoué" },
 ];
