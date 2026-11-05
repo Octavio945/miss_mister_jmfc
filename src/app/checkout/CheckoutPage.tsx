@@ -4,9 +4,10 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Script from "next/script";
 import { useSearchParams } from "next/navigation";
+import { motion } from "framer-motion";
+import SuccessCelebration from "@/components/motion/SuccessCelebration";
 import {
   ArrowLeft,
-  CheckCircle2,
   CreditCard,
   ShieldCheck,
   Clock,
@@ -20,6 +21,12 @@ import {
 } from "lucide-react";
 
 type PaymentStatus = "waiting" | "success" | "failed";
+
+// Entrée en cascade des éléments de l'écran de succès
+const SUCCESS_ITEM = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as const } },
+};
 
 interface PaymentError {
   message: string;
@@ -370,19 +377,22 @@ export default function CheckoutPage() {
   if (status === "success") {
     return (
       <div className="pt-24 pb-20 bg-background min-h-screen flex items-center justify-center">
-        <div className="max-w-md mx-auto text-center px-6 space-y-6">
-          <div className="w-24 h-24 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center mx-auto shadow-lg">
-            <CheckCircle2 size={48} className="text-green-500" />
-          </div>
-          <h1 className="text-3xl font-serif font-bold text-primary dark:text-white">
-            Votes confirmés ! 🎉
-          </h1>
-          <p className="text-foreground/70">
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.12, delayChildren: 0.6 } } }}
+          className="max-w-md mx-auto text-center px-6 space-y-6"
+        >
+          <SuccessCelebration />
+          <motion.h1 variants={SUCCESS_ITEM} className="text-3xl font-serif font-bold text-primary dark:text-white pt-2">
+            Votes confirmés !
+          </motion.h1>
+          <motion.p variants={SUCCESS_ITEM} className="text-foreground/70">
             <strong>{voteCount} vote{voteCount > 1 ? "s" : ""}</strong> ont été
             ajoutés à <strong>{participantName}</strong>. Merci pour votre soutien !
-          </p>
+          </motion.p>
           {anonCode && (
-            <div className="bg-accent/10 border border-accent/30 rounded-xl px-6 py-4">
+            <motion.div variants={SUCCESS_ITEM} className="bg-accent/10 border border-accent/30 rounded-xl px-6 py-4">
               <p className="text-sm text-foreground/60 mb-1">Votre code anonyme</p>
               <p className="font-mono font-bold text-xl text-primary dark:text-white tracking-widest">
                 {anonCode}
@@ -390,18 +400,20 @@ export default function CheckoutPage() {
               <p className="text-xs text-foreground/50 mt-1">
                 Conservez ce code pour prouver votre vote si nécessaire.
               </p>
-            </div>
+            </motion.div>
           )}
-          <div className="bg-black/5 dark:bg-white/5 rounded-xl px-6 py-3 text-sm text-foreground/50 font-mono">
+          <motion.div variants={SUCCESS_ITEM} className="bg-black/5 dark:bg-white/5 rounded-xl px-6 py-3 text-sm text-foreground/50 font-mono">
             Réf: {initialRef}
-          </div>
-          <Link
-            href="/participants"
-            className="inline-flex items-center justify-center space-x-2 px-8 py-4 rounded-full bg-primary text-white hover:bg-primary/90 font-medium transition-all hover:-translate-y-0.5 shadow-lg"
-          >
-            <span>Voir tous les candidats</span>
-          </Link>
-        </div>
+          </motion.div>
+          <motion.div variants={SUCCESS_ITEM}>
+            <Link
+              href="/participants"
+              className="inline-flex items-center justify-center space-x-2 px-8 py-4 rounded-full bg-primary text-white hover:bg-primary/90 font-medium transition-all hover:-translate-y-0.5 shadow-lg"
+            >
+              <span>Voir tous les candidats</span>
+            </Link>
+          </motion.div>
+        </motion.div>
       </div>
     );
   }

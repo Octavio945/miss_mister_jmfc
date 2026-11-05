@@ -32,13 +32,13 @@ function splitDuration(totalSeconds: number) {
 /** Chiffre qui défile verticalement jusqu'à sa valeur, façon compteur mécanique. */
 function RollingDigit({ digit }: { digit: number }) {
   return (
-    <span className="relative inline-block h-[1em] overflow-hidden leading-none" aria-hidden>
+    <span className="relative inline-block h-[1.2em] overflow-hidden leading-[1.2em]" aria-hidden>
       <span
         className="block transition-transform duration-500 ease-out motion-reduce:transition-none"
         style={{ transform: `translateY(-${digit * 10}%)` }}
       >
         {Array.from({ length: 10 }, (_, d) => (
-          <span key={d} className="block h-[1em]">
+          <span key={d} className="block h-[1.2em]">
             {d}
           </span>
         ))}

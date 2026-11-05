@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { ArrowRight, Images, Crown } from "lucide-react";
 import { TransitionLink as Link } from "@/components/TransitionLink";
-import { FadeIn } from "@/components/AnimatedSection";
+import { DrawLine, FadeIn, TextReveal } from "@/components/AnimatedSection";
+import HorizontalScroll from "@/components/motion/HorizontalScroll";
 import { prisma } from "@/lib/prisma";
 import { getEditionYear, getPastEvents } from "@/lib/event";
 
@@ -34,7 +35,8 @@ export default async function HistoriquePage() {
     : [];
 
   return (
-    <div className="pt-24 pb-20 bg-background min-h-screen">
+    // overflow-x-clip : la galerie horizontale déborde sans créer de barre de défilement (et sans casser « sticky »)
+    <div className="pt-24 pb-20 bg-background min-h-screen overflow-x-clip">
       <div className="max-w-6xl mx-auto px-6">
         <div className="text-center max-w-2xl mx-auto mb-16">
           <p className="text-sm font-bold tracking-[0.3em] uppercase text-accent flex justify-center items-center gap-3 mb-4">
@@ -43,11 +45,14 @@ export default async function HistoriquePage() {
             <span className="w-10 h-[1px] bg-accent inline-block" />
           </p>
           <h1 className="text-4xl md:text-5xl font-serif font-bold text-primary dark:text-white mb-4">
-            Les éditions passées
+            <TextReveal text="Les éditions passées" />
           </h1>
-          <p className="text-foreground/70 text-lg">
-            Revivez chaque édition du concours : ses lauréats, ses candidats et ses plus beaux moments.
-          </p>
+          <DrawLine className="w-32 mx-auto mb-6" delay={0.4} />
+          <FadeIn delay={0.3}>
+            <p className="text-foreground/70 text-lg">
+              Revivez chaque édition du concours : ses lauréats, ses candidats et ses plus beaux moments.
+            </p>
+          </FadeIn>
         </div>
 
         {editions.length === 0 ? (
@@ -55,7 +60,7 @@ export default async function HistoriquePage() {
             La première édition est en cours. Son histoire apparaîtra ici à la fin des votes.
           </p>
         ) : (
-          <div className="space-y-10">
+          <HorizontalScroll>
             {editions.map((edition, index) => {
               const miss = edition.participants.find((p) => p.category === "MISS");
               const mister = edition.participants.find((p) => p.category === "MISTER");
@@ -66,7 +71,8 @@ export default async function HistoriquePage() {
                 <FadeIn key={edition.id} direction="up" delay={Math.min(index, 3) * 0.1}>
                   <Link
                     href={`/historique/${edition.id}`}
-                    className="group grid md:grid-cols-5 bg-white dark:bg-[#111] rounded-3xl overflow-hidden border border-black/5 dark:border-white/10 shadow-sm hover:shadow-xl transition-shadow"
+                    data-cursor="Voir"
+                    className="group h-full grid md:grid-cols-5 bg-white dark:bg-[#111] rounded-3xl overflow-hidden border border-black/5 dark:border-white/10 shadow-sm hover:shadow-xl transition-shadow"
                   >
                     <div className="relative md:col-span-2 aspect-[16/10] md:aspect-auto md:min-h-72 bg-primary/10">
                       {cover && (
@@ -140,7 +146,7 @@ export default async function HistoriquePage() {
                 </FadeIn>
               );
             })}
-          </div>
+          </HorizontalScroll>
         )}
       </div>
     </div>

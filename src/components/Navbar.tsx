@@ -1,7 +1,10 @@
 "use client";
 
 import { TransitionLink as Link } from "@/components/TransitionLink";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { usePathname } from "next/navigation";
+import { motion, useMotionValueEvent, useScroll } from "framer-motion";
+import { MagneticButton } from "@/components/AnimatedSection";
 import { Menu, X } from "lucide-react";
 import Image from "next/image";
 
@@ -15,17 +18,28 @@ const NAV_LINKS = [
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const isSolid = scrolled || isOpen;
+  const [hidden, setHidden] = useState(false);
+  const pathname = usePathname();
+  // Barre transparente seulement au-dessus d'un bandeau sombre (accueil, page d'une édition) :
+  // sur les pages claires, des liens blancs sur fond blanc seraient illisibles
+  const overDarkHero = pathname === "/" || /^\/historique\/[^/]+$/.test(pathname ?? "");
+  const isSolid = scrolled || isOpen || !overDarkHero;
+  const { scrollY } = useScroll();
 
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 30);
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  // Barre cachée quand on descend (plus de place pour le contenu), visible dès qu'on remonte
+  useMotionValueEvent(scrollY, "change", (y) => {
+    const previous = scrollY.getPrevious() ?? 0;
+    setScrolled(y > 30);
+    if (y > 320 && y > previous + 6) setHidden(true);
+    else if (y < previous - 6 || y <= 320) setHidden(false);
+  });
 
   return (
-    <nav
-      className={`fixed w-full z-50 transition-all duration-500 ${
+    <motion.nav
+      initial={false}
+      animate={{ y: hidden && !isOpen ? "-110%" : "0%" }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      className={`fixed w-full z-50 transition-[background-color,box-shadow,padding,border-color] duration-500 ${
         isSolid
           ? "bg-background/95 backdrop-blur-2xl shadow-lg border-b border-accent/10 py-0"
           : "bg-transparent py-2"
@@ -37,16 +51,17 @@ export default function Navbar() {
       )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
+        <div className={`flex justify-between items-center transition-[height] duration-500 ${scrolled ? "h-16" : "h-20"}`}>
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group" onClick={() => setIsOpen(false)}>
-            <div className="relative w-12 h-12 sm:w-14 sm:h-14 transition-transform duration-300 group-hover:scale-105">
+            <div className={`relative transition-all duration-500 group-hover:scale-105 ${scrolled ? "w-10 h-10 sm:w-12 sm:h-12" : "w-12 h-12 sm:w-14 sm:h-14"}`}>
               <Image
                 src="/images/logo.png"
                 alt="Logo Miss & Mister JMFC"
                 fill
                 className="object-contain"
+                sizes="56px"
                 priority
               />
             </div>
@@ -74,8 +89,9 @@ export default function Navbar() {
               </Link>
             ))}
 
-            <div className="ml-4">
+            <MagneticButton className="ml-4">
               <Link
+                data-cursor="Voter"
                 href="/participants"
                 className="relative inline-flex items-center px-6 py-2.5 rounded-full font-bold text-sm tracking-wide overflow-hidden group shadow-[0_0_20px_rgba(212,175,55,0.2)] hover:shadow-[0_0_30px_rgba(212,175,55,0.4)] transition-shadow duration-300"
               >
@@ -83,7 +99,7 @@ export default function Navbar() {
                 <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <span className="relative z-10 text-primary">Votez !</span>
               </Link>
-            </div>
+            </MagneticButton>
           </div>
 
           {/* Mobile Menu Button */}
@@ -131,6 +147,6 @@ export default function Navbar() {
           </div>
         </div>
       )}
-    </nav>
+    </motion.nav>
   );
 }

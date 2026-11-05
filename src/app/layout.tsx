@@ -28,7 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" className={`${inter.variable} ${playfair.variable}`}>
+    <html lang="fr" data-scroll-behavior="smooth" className={`${inter.variable} ${playfair.variable}`}>
       <body className="min-h-screen flex flex-col font-sans antialiased text-foreground bg-background">
         <TransitionProvider>
           <AppLayout>{children}</AppLayout>

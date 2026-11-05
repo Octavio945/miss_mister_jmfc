@@ -3,7 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { TransitionLink as Link } from "@/components/TransitionLink";
-import { FadeIn } from "@/components/AnimatedSection";
+import { DrawLine, FadeIn, ParallaxImage, StaggerContainer, StaggerItem, TextReveal } from "@/components/AnimatedSection";
 import Podium from "@/components/Podium";
 import PhotoGallery from "@/components/PhotoGallery";
 import { prisma } from "@/lib/prisma";
@@ -56,7 +56,7 @@ export default async function EditionHistoryPage({ params }: Props) {
       {/* Bandeau */}
       <section className="relative w-full min-h-[50vh] flex items-end overflow-hidden bg-primary">
         {cover && (
-          <Image src={cover} alt={edition.title} fill priority sizes="100vw" className="object-cover opacity-50" />
+          <ParallaxImage src={cover} alt={edition.title} priority sizes="100vw" imageClassName="object-cover opacity-50" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-[#0F172A]/60 to-transparent" />
         <div className="relative max-w-6xl mx-auto w-full px-6 pt-32 pb-12">
@@ -67,7 +67,9 @@ export default async function EditionHistoryPage({ params }: Props) {
             <ArrowLeft size={16} /> Toutes les éditions
           </Link>
           <p className="text-accent font-serif font-bold text-2xl">Édition {getEditionYear(edition)}</p>
-          <h1 className="text-4xl md:text-6xl font-serif font-bold text-white mt-2">{edition.title}</h1>
+          <h1 className="text-4xl md:text-6xl font-serif font-bold text-white mt-2">
+            <TextReveal text={edition.title} delay={0.2} className="justify-start" />
+          </h1>
           <p className="text-white/70 mt-3">
             Votes du {formatDay(edition.startDate)} au {formatDay(edition.endDate)} · {edition.participants.length} candidats ·{" "}
             {totalVotes.toLocaleString("fr-FR")} votes
@@ -89,9 +91,10 @@ export default async function EditionHistoryPage({ params }: Props) {
         {edition.participants.length > 0 && (
           <section>
             <FadeIn direction="up">
-              <h2 className="text-center text-3xl md:text-4xl font-serif font-bold text-primary dark:text-white mb-12">
+              <h2 className="text-center text-3xl md:text-4xl font-serif font-bold text-primary dark:text-white mb-4">
                 Les lauréats
               </h2>
+              <DrawLine className="w-28 mx-auto mb-12" />
             </FadeIn>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-10">
               <FadeIn direction="up" delay={0.1}>
@@ -108,9 +111,10 @@ export default async function EditionHistoryPage({ params }: Props) {
         {edition.photos.length > 0 && (
           <section>
             <FadeIn direction="up">
-              <h2 className="text-center text-3xl md:text-4xl font-serif font-bold text-primary dark:text-white mb-10">
+              <h2 className="text-center text-3xl md:text-4xl font-serif font-bold text-primary dark:text-white mb-4">
                 En images
               </h2>
+              <DrawLine className="w-28 mx-auto mb-10" />
             </FadeIn>
             <PhotoGallery
               title={edition.title}
@@ -123,14 +127,15 @@ export default async function EditionHistoryPage({ params }: Props) {
         {edition.participants.length > 0 && (
           <section>
             <FadeIn direction="up">
-              <h2 className="text-center text-3xl md:text-4xl font-serif font-bold text-primary dark:text-white mb-10">
+              <h2 className="text-center text-3xl md:text-4xl font-serif font-bold text-primary dark:text-white mb-4">
                 Les candidats
               </h2>
+              <DrawLine className="w-28 mx-auto mb-10" />
             </FadeIn>
-            <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            <StaggerContainer className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4" delayOrder={0.06}>
               {[...misses, ...misters].map((p) => (
-                <li key={p.id}>
-                  <Link href={`/participants/${p.id}`} className="group block">
+                <StaggerItem key={p.id}>
+                  <Link href={`/participants/${p.id}`} data-cursor="Voir" className="group block">
                     <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-primary/10">
                       {p.imageUrl ? (
                         <Image
@@ -138,7 +143,7 @@ export default async function EditionHistoryPage({ params }: Props) {
                           alt={p.name}
                           fill
                           sizes="(max-width: 640px) 50vw, 20vw"
-                          className="object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none"
+                          className="object-cover transition-transform duration-700 group-hover:scale-110 motion-reduce:transition-none"
                           unoptimized={p.imageUrl.includes("dicebear")}
                         />
                       ) : (
@@ -153,9 +158,9 @@ export default async function EditionHistoryPage({ params }: Props) {
                     <p className="mt-2 font-serif font-bold text-sm text-primary dark:text-white truncate">{p.name.trim()}</p>
                     <p className="text-xs text-foreground/50">{p.totalVotes.toLocaleString("fr-FR")} votes</p>
                   </Link>
-                </li>
+                </StaggerItem>
               ))}
-            </ul>
+            </StaggerContainer>
           </section>
         )}
       </div>

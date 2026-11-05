@@ -54,9 +54,35 @@ export async function DELETE(
 
   try {
     const { id } = await params;
-    await prisma.participant.delete({ where: { id } });
+
+    const result = await prisma.$transaction(async (db) => {
+      // Des votes payés sont rattachés au candidat : on refuse pour ne pas perdre l'argent encaissé
+      const paid = await db.transactionItem.count({
+        where: { participantId: id, transaction: { status: "SUCCESS" } },
+      });
+      if (paid > 0) return { paid };
+
+      // Paiements jamais finalisés ou échoués : aucun argent reçu, on les supprime avec le candidat
+      await db.transaction.deleteMany({
+        where: { status: { not: "SUCCESS" }, items: { some: { participantId: id } } },
+      });
+      await db.participant.delete({ where: { id } });
+      return { paid: 0 };
+    });
+
+    if (result.paid > 0) {
+      return NextResponse.json(
+        {
+          error: `Impossible de supprimer ce candidat : ${result.paid} paiement${result.paid > 1 ? "s" : ""} confirmé${result.paid > 1 ? "s" : ""} lui ${result.paid > 1 ? "sont" : "est"} rattaché${result.paid > 1 ? "s" : ""}. Ces paiements doivent rester dans l'historique.`,
+        },
+        { status: 409 }
+      );
+    }
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (typeof error === "object" && error !== null && "code" in error && error.code === "P2025") {
+      return NextResponse.json({ error: "Ce candidat n'existe plus." }, { status: 404 });
+    }
     console.error("[DELETE /api/admin/participants/[id]]", error);
     return NextResponse.json(
       { error: "Erreur serveur lors de la suppression." },

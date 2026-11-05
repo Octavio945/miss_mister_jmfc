@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentEvent, getEditionYear } from "@/lib/event";
 import ParticipantsFilter from "@/components/ParticipantsFilter";
+import { CountUp, DrawLine, FadeIn, TextReveal } from "@/components/AnimatedSection";
 
 export const dynamic = "force-dynamic";
 
@@ -24,8 +25,10 @@ export default async function ParticipantsPage() {
 
         <div className="text-center max-w-2xl mx-auto mb-16">
           <h1 className="text-4xl md:text-5xl font-serif font-bold text-primary dark:text-white mb-4">
-            Candidats Officiels
+            <TextReveal text="Candidats Officiels" />
           </h1>
+          <DrawLine className="w-32 mx-auto mb-6" delay={0.4} />
+          <FadeIn delay={0.3}>
           <p className="text-foreground/70 text-lg">
             Découvrez les visages de l&apos;édition{event ? ` ${getEditionYear(event)}` : ""}. Soutenez votre
             candidat(e) favori(e) et contribuez au rayonnement de notre
@@ -33,10 +36,11 @@ export default async function ParticipantsPage() {
           </p>
           {event && (
             <p className="mt-3 text-sm font-medium text-accent">
-              {participants.length} candidat{participants.length !== 1 ? "s" : ""}{" "}
-              · {participants.reduce((s, p) => s + p.totalVotes, 0).toLocaleString()} votes enregistrés
+              <CountUp value={participants.length} /> candidat{participants.length !== 1 ? "s" : ""}{" "}
+              · <CountUp value={participants.reduce((s, p) => s + p.totalVotes, 0)} /> votes enregistrés
             </p>
           )}
+          </FadeIn>
         </div>
 
         {/* Client component for tab filtering */}

@@ -168,11 +168,53 @@ body {
   animation: badge-shine 4s linear infinite;
 }
 
+/* Curseur personnalisé (ordinateur) : la flèche est masquée, sauf dans les champs de saisie */
+@media (hover: hover) and (pointer: fine) {
+  html.custom-cursor,
+  html.custom-cursor * {
+    cursor: none;
+  }
+  html.custom-cursor :is(input, textarea, select, [contenteditable="true"]) {
+    cursor: auto;
+  }
+}
+
+/* Reflet doré qui parcourt la bordure d'une carte */
+.border-sweep {
+  position: relative;
+  isolation: isolate;
+}
+.border-sweep::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(110deg, transparent 35%, rgba(240, 208, 96, 0.9) 50%, transparent 65%) 0 0 / 250% 100%;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: border-sweep 5s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+@keyframes border-sweep {
+  0% { background-position: 150% 0; }
+  60%, 100% { background-position: -100% 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .podium-shine::after { animation: none; display: none; }
+  .border-sweep::before { animation: none; }
   .gold-text { animation: none; background-position: 0% 50%; }
   .glow-pulse { animation: none; }
   .float { animation: none; }
   .star-particle { animation: none; }
   .badge-luxury { animation: none; }
+}
+
+/* Barre de l'écran de chargement */
+@keyframes loading-bar {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
 }

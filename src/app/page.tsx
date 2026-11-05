@@ -7,8 +7,11 @@ import {
   TiltCard,
   MagneticButton,
   TextReveal,
+  DrawLine,
+  Parallax,
+  ParallaxImage,
+  RiseSection,
 } from "@/components/AnimatedSection";
-import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { getCurrentEvent, getEditionYear } from "@/lib/event";
 import CountdownTimer from "@/components/CountdownTimer";
@@ -70,7 +73,7 @@ export default async function Home() {
                 Compte à rebours
               </div>
             </div>
-            <div className="relative rounded-3xl overflow-hidden glow-pulse border border-accent/20">
+            <div className="relative rounded-3xl overflow-hidden glow-pulse border border-accent/20 border-sweep">
               {/* Fond glassmorphism */}
               <div className="absolute inset-0 bg-gradient-to-br from-accent/5 via-transparent to-accent/5" />
               <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/60 to-transparent" />
@@ -125,6 +128,7 @@ export default async function Home() {
                     "Le classement"
                   )}
                 </h2>
+                <DrawLine className="w-40 mx-auto" />
                 <p className="text-foreground/60 max-w-xl mx-auto text-lg">
                   {votingEnded
                     ? "Merci pour votre mobilisation. Voici les candidats les plus soutenus par le public."
@@ -171,6 +175,7 @@ export default async function Home() {
               <h2 className="text-5xl md:text-6xl font-serif font-bold text-primary dark:text-white">
                 Nos Candidats
               </h2>
+              <DrawLine className="w-40 mx-auto" />
               <p className="text-foreground/60 text-lg max-w-xl mx-auto leading-relaxed">
                 {votingOpen
                   ? "Découvrez les candidats et votez pour votre favori(e) avant la clôture."
@@ -180,7 +185,9 @@ export default async function Home() {
           </FadeIn>
 
           <FadeIn direction="up" delay={0.2}>
-            <CircularCarousel candidates={participants} />
+            <Parallax speed={-0.08}>
+              <CircularCarousel candidates={participants} />
+            </Parallax>
           </FadeIn>
 
           <FadeIn direction="up" delay={0.3}>
@@ -203,7 +210,7 @@ export default async function Home() {
       {/* ═══════════════════════════════════════════════════════════════════
           NOTRE MISSION
       ═══════════════════════════════════════════════════════════════════ */}
-      <section className="w-full py-28 bg-primary text-white overflow-hidden relative">
+      <RiseSection className="w-full py-28 bg-primary text-white overflow-hidden relative">
         {/* Pattern déco */}
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
           style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "32px 32px" }} />
@@ -251,24 +258,27 @@ export default async function Home() {
             <div className="absolute inset-0 bg-accent/0 group-hover:bg-accent/10 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
             {/* Cadre doré */}
             <div className="absolute inset-0 border-2 border-accent/0 group-hover:border-accent/20 transition-colors duration-700 z-20 rounded-3xl" />
-            <Image
+            <ParallaxImage
               src="/images/outdoor-portrait-stylish-woman-black-blazer-suit-white-classic-hat.jpg"
               alt="Notre mission et nos valeurs"
-              fill
               sizes="(max-width: 768px) 100vw, 50vw"
-              className="object-cover scale-100 group-hover:scale-110 transition-transform duration-[2.5s] ease-out origin-center"
+              imageClassName="object-cover scale-100 group-hover:scale-110 transition-transform duration-[2.5s] ease-out origin-center"
             />
           </FadeIn>
         </div>
-      </section>
+      </RiseSection>
 
       {/* ═══════════════════════════════════════════════════════════════════
           COMMENT VOTER — 3 étapes
       ═══════════════════════════════════════════════════════════════════ */}
       <section id="comment-voter" className="w-full py-32 bg-background relative overflow-hidden">
         {/* Halos de fond */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-accent/6 rounded-full blur-[150px] -translate-y-1/3 translate-x-1/3 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/4 rounded-full blur-[120px] translate-y-1/3 -translate-x-1/3 pointer-events-none" />
+        <Parallax speed={0.35} className="absolute top-0 right-0 pointer-events-none">
+          <div className="w-[500px] h-[500px] bg-accent/6 rounded-full blur-[150px] -translate-y-1/3 translate-x-1/3" />
+        </Parallax>
+        <Parallax speed={-0.25} className="absolute bottom-0 left-0 pointer-events-none">
+          <div className="w-[400px] h-[400px] bg-accent/4 rounded-full blur-[120px] translate-y-1/3 -translate-x-1/3" />
+        </Parallax>
 
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <FadeIn direction="up">
@@ -280,6 +290,7 @@ export default async function Home() {
                 Voter en{" "}
                 <span className="gold-text">3 étapes</span>
               </h2>
+              <DrawLine className="w-40 mx-auto" />
             </div>
           </FadeIn>
 
@@ -294,13 +305,13 @@ export default async function Home() {
               {
                 num: "02",
                 title: "Indiquez vos votes",
-                desc: "Choisissez le nombre de votes et votre réseau, MTN ou Celtis. Vous pouvez voter de façon anonyme.",
+                desc: "Choisissez le nombre de votes et, si vous le souhaitez, votez de façon anonyme.",
                 icon: "✋",
               },
               {
                 num: "03",
                 title: "Payez par Mobile Money",
-                desc: "Envoyez le montant indiqué avec votre référence, puis confirmez sur WhatsApp. Vos votes sont ajoutés dès la validation.",
+                desc: "Payez en toute sécurité avec FedaPay (MTN, Moov, Celtiis). Vos votes sont ajoutés automatiquement dès la confirmation.",
                 icon: "💳",
               },
             ].map(({ num, title, desc }, index) => (
@@ -337,7 +348,7 @@ export default async function Home() {
       {/* ═══════════════════════════════════════════════════════════════════
           CTA FINAL — Bannière luxe
       ═══════════════════════════════════════════════════════════════════ */}
-      <section className="w-full py-28 bg-primary relative overflow-hidden">
+      <RiseSection className="w-full py-28 bg-primary relative overflow-hidden">
         {/* Halos dorés */}
         <div className="absolute -top-32 -left-32 w-[400px] h-[400px] bg-accent/10 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute -bottom-32 -right-32 w-[400px] h-[400px] bg-accent/10 rounded-full blur-[100px] pointer-events-none" />
@@ -388,7 +399,7 @@ export default async function Home() {
             </div>
           </FadeIn>
         </div>
-      </section>
+      </RiseSection>
 
     </div>
   );

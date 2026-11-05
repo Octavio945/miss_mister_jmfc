@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { usePageRevealed } from "@/components/TransitionProvider";
+import { AnimatedNumber, CountUp } from "@/components/AnimatedSection";
 import {
   Trophy,
   Lock,
@@ -28,6 +31,7 @@ const clampVotes = (value: number) => Math.min(MAX_VOTES, Math.max(1, Math.floor
 
 export default function VotePanel({ participant, eventActive, votePrice }: Props) {
   const router = useRouter();
+  const revealed = usePageRevealed();
   const [voteCount, setVoteCount] = useState(1);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [name, setName] = useState("");
@@ -88,7 +92,12 @@ export default function VotePanel({ participant, eventActive, votePrice }: Props
   };
 
   return (
-    <div className="bg-white dark:bg-[#111] p-6 md:p-8 lg:p-10 rounded-3xl shadow-xl border border-black/5 dark:border-white/5 sticky top-24 md:top-32">
+    <motion.div
+      initial={{ opacity: 0, y: 40 }}
+      animate={revealed ? { opacity: 1, y: 0 } : undefined}
+      transition={{ duration: 0.9, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      className="bg-white dark:bg-[#111] p-6 md:p-8 lg:p-10 rounded-3xl shadow-xl border border-black/5 dark:border-white/5 sticky top-24 md:top-32"
+    >
 
       {/* Score */}
       <div className="flex items-center justify-between mb-8 pb-8 border-b border-black/5 dark:border-white/10">
@@ -98,7 +107,7 @@ export default function VotePanel({ participant, eventActive, votePrice }: Props
           </p>
           <div className="flex items-center space-x-3 text-3xl font-serif font-bold">
             <Trophy className="text-accent" size={32} />
-            <span id="vote-score">{participant.totalVotes.toLocaleString()}</span>
+            <CountUp value={participant.totalVotes} className="font-serif" />
           </div>
         </div>
       </div>
@@ -250,7 +259,7 @@ export default function VotePanel({ participant, eventActive, votePrice }: Props
               <div className="flex items-center justify-between text-xl font-bold">
                 <span>Total</span>
                 <span className={`tabular-nums transition-colors ${isTooLow ? "text-red-500" : "text-accent"}`}>
-                  {total.toLocaleString("fr-FR")} FCFA
+                  <AnimatedNumber value={total} /> FCFA
                 </span>
               </div>
               <p className="text-xs text-foreground/50 mt-0.5 text-right tabular-nums">
@@ -269,7 +278,8 @@ export default function VotePanel({ participant, eventActive, votePrice }: Props
               id="vote-submit"
               onClick={handleVote}
               disabled={loading || isTooLow}
-              className="w-full h-14 rounded-full bg-primary text-white flex items-center justify-center space-x-2 text-lg font-medium hover:bg-primary/90 transition-all hover:-translate-y-0.5 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              data-cursor="Payer"
+              className="relative overflow-hidden w-full h-14 rounded-full bg-primary text-white flex items-center justify-center space-x-2 text-lg font-medium hover:bg-primary/90 transition-all hover:-translate-y-0.5 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none podium-shine"
             >
               {loading ? (
                 <Loader2 size={22} className="animate-spin" />
@@ -297,6 +307,6 @@ export default function VotePanel({ participant, eventActive, votePrice }: Props
           )}
         </>
       )}
-    </div>
+    </motion.div>
   );
 }

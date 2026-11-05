@@ -97,14 +97,17 @@ export default function AdminParticipants() {
     setActionLoading(true);
     try {
       const res = await fetch(`/api/admin/participants/${modal.id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const d = await res.json().catch(() => null);
+        throw new Error(d?.error || "Une erreur s'est produite lors de la suppression.");
+      }
       setParticipants((prev) => prev.filter((p) => p.id !== modal.id));
       closeModal();
       showToast("success", "Candidat supprimé avec succès.");
       router.refresh();
-    } catch {
+    } catch (e) {
       closeModal();
-      showToast("error", "Une erreur s'est produite lors de la suppression.");
+      showToast("error", e instanceof Error ? e.message : "Une erreur s'est produite lors de la suppression.");
     } finally {
       setActionLoading(false);
     }

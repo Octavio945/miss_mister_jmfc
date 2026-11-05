@@ -1,10 +1,12 @@
 import { TransitionLink as Link } from "@/components/TransitionLink";
 import { Facebook, Mail, Phone, Instagram, Heart } from "lucide-react";
 import Image from "next/image";
+import FooterReveal from "@/components/motion/FooterReveal";
 
 export default function Footer() {
   return (
-    <footer className="bg-[#030E1F] text-white relative overflow-hidden">
+    // md:sticky + -z-10 : le pied de page reste fixe sous la page, qui glisse et le dévoile en arrivant en bas
+    <footer className="bg-[#030E1F] text-white relative overflow-hidden md:sticky md:bottom-0 md:-z-10">
       {/* Ligne dorée supérieure */}
       <div className="h-[2px] bg-gradient-to-r from-transparent via-accent to-transparent" />
 
@@ -18,14 +20,14 @@ export default function Footer() {
         style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "28px 28px" }}
       />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-16">
+      <FooterReveal className="relative z-10 max-w-7xl mx-auto px-6 py-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
 
           {/* Logo & About */}
           <div className="space-y-6">
             <div className="flex items-center gap-4">
               <div className="relative w-14 h-14 flex-shrink-0">
-                <Image src="/images/logo.png" alt="Logo Miss & Mister JMFC" fill className="object-contain drop-shadow-lg" />
+                <Image src="/images/logo.png" alt="Logo Miss & Mister JMFC" fill sizes="56px" className="object-contain drop-shadow-lg" />
               </div>
               <div>
                 <p className="font-serif text-accent font-bold text-lg leading-tight">Miss & Mister</p>
@@ -132,7 +134,7 @@ export default function Footer() {
             </Link>
           </div>
         </div>
-      </div>
+      </FooterReveal>
     </footer>
   );
 }
